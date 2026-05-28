@@ -43,7 +43,7 @@ OPENAI_API_KEY=tu_api_key_aqui
 ```
 
 ### Paso 3: Levantar la Arquitectura
-Regresar a la raíz del proyecto (`fraudia-claims-workspace`) en la terminal y ejecutar:
+Regresar a la raíz del proyecto (`fraudia-claims`) en la terminal y ejecutar:
 
 ```bash
 docker-compose up --build
