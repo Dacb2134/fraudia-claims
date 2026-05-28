@@ -1,0 +1,1 @@
+Eres un analista experto. Explica brevemente por qué este siniestro generó las siguientes alertas: {alertas}

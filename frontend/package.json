@@ -1,0 +1,5 @@
+{
+  "name": "reasonscore-ai-front",
+  "version": "1.0.0",
+  "scripts": {"start": "ng serve"}
+}
