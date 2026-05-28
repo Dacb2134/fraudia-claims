@@ -1,9 +1,39 @@
+# =========================
+# 1. Credenciales y Seguridad
+# =========================
+.env
+.env.*
+*.pem
+
+# =========================
+# 2. Python / Backend (FastAPI)
+# =========================
 venv/
+env/
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# =========================
+# 3. Node / Frontend (React + Vite)
+# =========================
 node_modules/
 dist/
-.angular/
-.env
-*.sqlite3
+dist-ssr/
+*.local
+
+# =========================
+# 4. Logs y Bases de Datos locales
+# =========================
+*.log
+mysql_data/
+*.sql
+
+# =========================
+# 5. Sistema Operativo y Editores
+# =========================
 .DS_Store
+Thumbs.db
+.vscode/
+.idea/
