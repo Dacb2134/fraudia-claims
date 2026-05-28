@@ -1,39 +1,34 @@
-# =========================
-# 1. Credenciales y Seguridad
-# =========================
+# Secretos — NUNCA a GitHub
 .env
-.env.*
-*.pem
+*.env
 
-# =========================
-# 2. Python / Backend (FastAPI)
-# =========================
-venv/
-env/
+# Python
 __pycache__/
 *.py[cod]
-*$py.class
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
 .pytest_cache/
 
-# =========================
-# 3. Node / Frontend (React + Vite)
-# =========================
+# Node
 node_modules/
-dist/
-dist-ssr/
-*.local
+frontend/dist/
+frontend/.vite/
 
-# =========================
-# 4. Logs y Bases de Datos locales
-# =========================
-*.log
+# MySQL local
 mysql_data/
-*.sql
 
-# =========================
-# 5. Sistema Operativo y Editores
-# =========================
-.DS_Store
-Thumbs.db
+# IDEs
 .vscode/
 .idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Datos sensibles
+ai_data_core/data/raw/
+ai_data_core/data/processed/
