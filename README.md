@@ -25,8 +25,8 @@ No es necesario instalar Python, Node.js ni MySQL localmente. Solo se requiere:
 Abrir la terminal en el directorio de preferencia y ejecutar:
 
 ```bash
-git clone URL_DE_TU_REPOSITORIO_AQUI
-cd fraudia-claims-workspace
+git clone URL_
+cd fraudia-claims
 ```
 
 ### Paso 2: Configurar Credenciales (.env)
