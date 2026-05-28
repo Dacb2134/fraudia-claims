@@ -1,7 +1,23 @@
-fastapi
-uvicorn
-sqlalchemy
-pymysql
-openai
-pandas
-scikit-learn
+# API
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+python-multipart==0.0.12
+
+# Base de datos
+sqlalchemy==2.0.36
+pymysql==1.1.1
+cryptography==43.0.3
+
+# IA
+anthropic==0.39.0
+scikit-learn==1.5.2
+pandas==2.2.3
+numpy==1.26.4
+
+# Auth
+bcrypt==4.2.0
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+
+# Config
+python-dotenv==1.0.1
