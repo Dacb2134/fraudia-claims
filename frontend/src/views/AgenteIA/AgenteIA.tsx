@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import './AgenteIA.css'
 import Sidebar from '../../components/shared/Sidebar'
-import { sendChat } from '../../services/chatService'
+import { sendChat, sendChatConArchivo } from '../../services/chatService'
 import type { ChatMessage } from '../../models'
 import type { NavProps } from '../../App'
 
@@ -68,6 +68,8 @@ export default function AgenteIA({ onNav, onLogout }: NavProps) {
   const [messages,       setMessages]       = useState<ChatMessage[]>([])
   const [input,          setInput]          = useState('')
   const [loading,        setLoading]        = useState(false)
+  const [archivoAdjunto, setArchivoAdjunto] = useState<File | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [resumenLoading, setResumenLoading] = useState(false)
   const [busqueda,       setBusqueda]       = useState('')
   const [showNotif,      setShowNotif]      = useState(false)
@@ -101,16 +103,32 @@ export default function AgenteIA({ onNav, onLogout }: NavProps) {
     if (!texto || loading) return
     setInput('')
     if (textareaRef.current) textareaRef.current.style.height = 'auto'
-    setMessages(prev => [...prev, { role: 'user', text: texto }])
+
+    const labelArchivo = archivoAdjunto ? ` 📎 ${archivoAdjunto.name}` : ''
+    setMessages(prev => [...prev, { role: 'user', text: texto + labelArchivo }])
     setLoading(true)
+
     try {
-      const res = await sendChat({ pregunta: texto })
+      let res
+      if (archivoAdjunto) {
+        res = await sendChatConArchivo(texto, archivoAdjunto)
+        setArchivoAdjunto(null)
+        if (fileInputRef.current) fileInputRef.current.value = ''
+      } else {
+        res = await sendChat({ pregunta: texto })
+      }
       setMessages(prev => [...prev, { role: 'ai', text: res.respuesta }])
-    } catch {
-      setMessages(prev => [...prev, { role: 'ai', text: 'Error al conectar con el agente. Verifica que el backend esté activo.' }])
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error desconocido'
+      setMessages(prev => [...prev, { role: 'ai', text: `Error al conectar con el agente: ${msg}` }])
     } finally {
       setLoading(false)
     }
+  }
+
+  function seleccionarArchivo(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (file) setArchivoAdjunto(file)
   }
 
   async function generarResumen() {
@@ -409,9 +427,38 @@ export default function AgenteIA({ onNav, onLogout }: NavProps) {
 
         {/* ── Input ── */}
         <footer className="agente-footer">
+          {/* Indicador de archivo adjunto */}
+          {archivoAdjunto && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px',
+              background: '#e6eeff', borderRadius: 8, marginBottom: 8,
+              fontSize: 12, color: '#002662',
+            }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>description</span>
+              <span style={{ fontWeight: 600 }}>{archivoAdjunto.name}</span>
+              <span style={{ color: '#747783' }}>({(archivoAdjunto.size / 1024).toFixed(0)} KB)</span>
+              <button
+                onClick={() => { setArchivoAdjunto(null); if (fileInputRef.current) fileInputRef.current.value = '' }}
+                style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: '#ba1a1a' }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>close</span>
+              </button>
+            </div>
+          )}
           <div className="input-wrap">
             <div className="input-box">
-              <button className="input-icon-btn" title="Adjuntar (no disponible en demo)">
+              {/* Input de archivo oculto */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,.txt,.csv,image/*"
+                style={{ display: 'none' }}
+                onChange={seleccionarArchivo}
+              />
+              <button
+                className="input-icon-btn"
+                title="Adjuntar PDF, TXT, CSV o imagen"
+                onClick={() => fileInputRef.current?.click()}
+                style={archivoAdjunto ? { color: '#0053cf' } : {}}>
                 <span className="material-symbols-outlined">attach_file</span>
               </button>
               <textarea
@@ -420,7 +467,7 @@ export default function AgenteIA({ onNav, onLogout }: NavProps) {
                 value={input}
                 onChange={autoResize}
                 onKeyDown={handleKeyDown}
-                placeholder="Pregunta sobre pólizas, siniestros o proveedores… (Enter para enviar)"
+                placeholder={archivoAdjunto ? `Pregunta sobre "${archivoAdjunto.name}"…` : 'Pregunta sobre pólizas, siniestros o proveedores… (Enter para enviar)'}
                 className="input-textarea"
               />
               <button className="input-icon-btn" title="Micrófono (no disponible en demo)">

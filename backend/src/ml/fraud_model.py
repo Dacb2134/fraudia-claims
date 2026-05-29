@@ -77,72 +77,93 @@ def preparar_features(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
     return df[features_finales].fillna(0), encoders
 
 
-def entrenar_modelo() -> dict:
-    """
-    Entrena el modelo con el CSV sintético.
-    Guarda el modelo en disco y retorna métricas.
-    """
-    print("🤖 Cargando dataset para entrenamiento...")
-    df = pd.read_csv(CSV_PATH)
-
+def _entrenar_con_df(df: pd.DataFrame) -> dict:
+    """Lógica interna de entrenamiento a partir de un DataFrame ya cargado."""
     X, encoders = preparar_features(df)
     y = df[TARGET].astype(int)
 
     print(f"   Dataset: {len(df)} filas | Fraudes: {y.sum()} ({y.mean()*100:.1f}%)")
 
-    # Split 80/20
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, random_state=42, stratify=y
     )
 
-    # Modelo
     if MODELO_NOMBRE == "XGBoost":
         modelo = XGBClassifier(
-            n_estimators=100,
-            max_depth=4,
-            learning_rate=0.1,
-            scale_pos_weight=4,   # compensa desbalance 80/20
-            random_state=42,
-            eval_metric="logloss",
-            verbosity=0,
+            n_estimators=100, max_depth=4, learning_rate=0.1,
+            scale_pos_weight=4, random_state=42, eval_metric="logloss", verbosity=0,
         )
     else:
         modelo = RandomForestClassifier(
-            n_estimators=100,
-            max_depth=6,
-            class_weight="balanced",
-            random_state=42,
+            n_estimators=100, max_depth=6, class_weight="balanced", random_state=42,
         )
 
     modelo.fit(X_train, y_train)
-
-    # Métricas
     y_pred      = modelo.predict(X_test)
     y_pred_prob = modelo.predict_proba(X_test)[:, 1]
 
     metricas = {
-        "modelo":    MODELO_NOMBRE,
-        "precision": round(float(precision_score(y_test, y_pred, zero_division=0)), 3),
-        "recall":    round(float(recall_score(y_test, y_pred, zero_division=0)), 3),
-        "f1_score":  round(float(f1_score(y_test, y_pred, zero_division=0)), 3),
-        "auc_roc":   round(float(roc_auc_score(y_test, y_pred_prob)), 3),
+        "modelo":     MODELO_NOMBRE,
+        "precision":  round(float(precision_score(y_test, y_pred, zero_division=0)), 3),
+        "recall":     round(float(recall_score(y_test, y_pred, zero_division=0)), 3),
+        "f1_score":   round(float(f1_score(y_test, y_pred, zero_division=0)), 3),
+        "auc_roc":    round(float(roc_auc_score(y_test, y_pred_prob)), 3),
         "train_size": len(X_train),
         "test_size":  len(X_test),
+        "total_filas": len(df),
     }
+    print(f"   ✅ {MODELO_NOMBRE} | Precision: {metricas['precision']} | Recall: {metricas['recall']} | AUC-ROC: {metricas['auc_roc']}")
 
-    print(f"   ✅ {MODELO_NOMBRE} entrenado")
-    print(f"   Precision: {metricas['precision']} | Recall: {metricas['recall']} "
-          f"| F1: {metricas['f1_score']} | AUC-ROC: {metricas['auc_roc']}")
-
-    # Guardar modelo y encoders
     MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
-    with open(MODEL_PATH,  "wb") as f:
-        pickle.dump(modelo, f)
-    with open(SCALER_PATH, "wb") as f:
-        pickle.dump(encoders, f)
-
+    with open(MODEL_PATH,  "wb") as f: pickle.dump(modelo, f)
+    with open(SCALER_PATH, "wb") as f: pickle.dump(encoders, f)
     print(f"   💾 Modelo guardado en {MODEL_PATH}")
     return metricas
+
+
+def entrenar_modelo() -> dict:
+    """
+    Entrena el modelo. Intenta CSV primero; si no existe, falla con mensaje claro.
+    Usar entrenar_modelo_desde_bd() para entrenar desde MySQL.
+    """
+    print("🤖 Cargando dataset para entrenamiento...")
+    if not CSV_PATH.exists():
+        raise FileNotFoundError(
+            f"Dataset CSV no encontrado en {CSV_PATH}. "
+            "Usa el endpoint con soporte de BD o sube el archivo siniestros_scored.csv."
+        )
+    df = pd.read_csv(CSV_PATH)
+
+    return _entrenar_con_df(df)
+
+
+def entrenar_modelo_desde_bd(db_session) -> dict:
+    """
+    Entrena el modelo usando datos directamente de MySQL.
+    Funciona en Railway y cualquier entorno sin archivos CSV.
+    """
+    from sqlalchemy import text as sql_text
+    print("🤖 Cargando datos desde la base de datos MySQL...")
+    rows = db_session.execute(sql_text("""
+        SELECT
+            s.monto_reclamado,
+            s.monto_estimado,
+            COALESCE(s.dias_desde_inicio_poliza, 0)        AS dias_desde_inicio_poliza,
+            COALESCE(s.dias_desde_fin_poliza, 0)           AS dias_desde_fin_poliza,
+            COALESCE(s.dias_entre_ocurrencia_reporte, 0)   AS dias_entre_ocurrencia_reporte,
+            COALESCE(s.historial_siniestros_asegurado, 0)  AS historial_siniestros_asegurado,
+            COALESCE(s.tiene_doc_inconsistente, 0)         AS tiene_doc_inconsistente,
+            s.ramo, s.cobertura, s.estado, s.sucursal,
+            COALESCE(sc.score_normalizado, 0)              AS score_riesgo,
+            COALESCE(s.etiqueta_fraude_simulada, 0)        AS etiqueta_fraude_simulada
+        FROM siniestros s
+        LEFT JOIN scores_riesgo sc ON s.id_siniestro = sc.id_siniestro
+    """)).mappings().all()
+
+    df = pd.DataFrame([dict(r) for r in rows])
+    if len(df) < 20:
+        raise ValueError(f"Solo {len(df)} registros en BD. Se necesitan ≥20 para entrenar.")
+    return _entrenar_con_df(df)
 
 
 def cargar_modelo():

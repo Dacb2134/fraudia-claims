@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 from pydantic import BaseModel
 from src.core.database import get_db
-from src.ml.fraud_model import (entrenar_modelo, predecir_probabilidad,
+from src.ml.fraud_model import (entrenar_modelo_desde_bd, predecir_probabilidad,
                                  MODEL_PATH, MODELO_NOMBRE)
 
 router = APIRouter()
@@ -45,13 +45,17 @@ def estado_modelo():
 
 
 @router.post("/entrenar")
-def entrenar():
-    """Entrena o reentrena el modelo con el dataset sintético."""
+def entrenar(db: Session = Depends(get_db)):
+    """
+    Entrena o reentrena el modelo.
+    Usa datos de la base de datos MySQL (funciona en Railway sin CSV).
+    """
     try:
-        metricas = entrenar_modelo()
+        metricas = entrenar_modelo_desde_bd(db)
         return {
-            "mensaje":  "✅ Modelo entrenado correctamente",
+            "mensaje":  "✅ Modelo entrenado correctamente desde la base de datos",
             "metricas": metricas,
+            "fuente":   "MySQL",
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error entrenando: {str(e)}")

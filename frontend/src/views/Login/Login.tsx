@@ -104,26 +104,42 @@ export default function Login({ onLogin }: { onLogin: () => void }) {
           </button>
 
           <div className="login-divider">
-            <hr /><span>O</span><hr />
+            <hr /><span>Demo</span><hr />
           </div>
 
-          <button
-            className="login-btn-demo"
-            onClick={() => { setEmail('analista@fraudia.com'); setPassword('analista123') }}
-          >
-            Acceso demo
-          </button>
+          {/* Cuentas demo por rol */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {[
+              { rol: 'Analista', email: 'analista@fraudia.com', pass: 'analista123', color: '#3b82f6', icon: 'manage_search' },
+              { rol: 'Supervisor', email: 'supervisor@fraudia.com', pass: 'supervisor123', color: '#f59e0b', icon: 'supervisor_account' },
+              { rol: 'Admin', email: 'admin@fraudia.com', pass: 'admin123', color: '#ef4444', icon: 'admin_panel_settings' },
+            ].map(({ rol, email, pass, color, icon }) => (
+              <button
+                key={rol}
+                className="login-btn-demo"
+                onClick={() => { setEmail(email); setPassword(pass) }}
+                style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', textAlign: 'left' }}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: 18, color, fontVariationSettings: "'FILL' 1" }}>{icon}</span>
+                <span style={{ flex: 1 }}>
+                  <span style={{ fontWeight: 700, color: 'rgba(148,186,255,0.9)', fontSize: 13 }}>{rol}</span>
+                  <span style={{ display: 'block', fontSize: 11, color: 'rgba(148,186,255,0.4)', fontFamily: 'JetBrains Mono' }}>{email}</span>
+                </span>
+                <span style={{ fontSize: 11, color: 'rgba(148,186,255,0.35)', fontFamily: 'JetBrains Mono' }}>{pass}</span>
+              </button>
+            ))}
+          </div>
         </div>
 
         <footer className="login-footer">
           <div className="login-badge">
-            <span className="material-symbols-outlined" style={{ fontSize: 16, color: '#60a5fa' }}>info</span>
+            <span className="material-symbols-outlined" style={{ fontSize: 16, color: '#60a5fa' }}>shield</span>
             Este sistema detecta alertas, no acusa fraude
           </div>
           <div className="login-links">
             <a href="#">Ética AI</a>
             <span>•</span>
-            <a href="#">Soporte Técnico</a>
+            <a href="#">HackIAthon 2026</a>
           </div>
         </footer>
 

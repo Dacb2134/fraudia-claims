@@ -1,11 +1,11 @@
 """
-POST /api/v1/chat
-Agente conversacional usando Google Gemini.
+POST /api/v1/chat          — consulta al agente
+POST /api/v1/chat/archivo  — consulta con archivo adjunto (PDF, TXT, imagen)
 """
 import os
 import json
 import google.generativeai as genai
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from pydantic import BaseModel
@@ -184,3 +184,69 @@ Pregunta del analista: {request.pregunta}"""
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error del agente: {str(e)}")
+
+
+@router.post("/archivo")
+async def chat_con_archivo(
+    pregunta: str = Form(...),
+    archivo:  UploadFile = File(...),
+    db:       Session = Depends(get_db),
+):
+    """
+    Responde preguntas sobre un archivo adjunto (PDF, TXT, imagen).
+    El analista puede subir un documento de siniestro y hacer preguntas sobre él.
+    """
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="GEMINI_API_KEY no configurada")
+
+    contenido = await archivo.read()
+    mime_type  = archivo.content_type or "application/octet-stream"
+    nombre     = archivo.filename or "archivo"
+
+    # Validar tamaño (máx 10 MB)
+    if len(contenido) > 10 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="Archivo demasiado grande (máximo 10 MB)")
+
+    tipos_permitidos = {
+        "application/pdf", "text/plain", "text/csv",
+        "image/jpeg", "image/png", "image/webp",
+    }
+    if mime_type not in tipos_permitidos:
+        raise HTTPException(
+            status_code=415,
+            detail=f"Tipo de archivo no soportado: {mime_type}. Usa PDF, TXT, CSV o imagen."
+        )
+
+    contexto = obtener_contexto_bd(db)
+
+    try:
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel(model_name=GEMINI_MODEL, system_instruction=SYSTEM_PROMPT)
+
+        partes = [
+            f"Contexto del sistema:\n{contexto}\n\nEl analista adjuntó el archivo '{nombre}'.\nPregunta: {pregunta}",
+            {"mime_type": mime_type, "data": contenido},
+        ]
+
+        response  = model.generate_content(partes)
+        respuesta = response.text
+
+        try:
+            db.execute(text("""
+                INSERT INTO log_consultas_agente (pregunta, respuesta, tokens_usados)
+                VALUES (:p, :r, 0)
+            """), {"p": f"[ARCHIVO: {nombre}] {pregunta}", "r": respuesta})
+            db.commit()
+        except Exception:
+            pass
+
+        return {
+            "pregunta":  pregunta,
+            "archivo":   nombre,
+            "respuesta": respuesta,
+            "modelo":    GEMINI_MODEL,
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error procesando archivo: {str(e)}")
