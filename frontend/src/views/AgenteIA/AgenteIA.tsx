@@ -120,7 +120,7 @@ export default function AgenteIA({ onNav, onLogout }: NavProps) {
         const historialActual = messages
           .slice(-8)
           .filter(m => m.role === 'user' || m.role === 'ai')
-          .map(m => ({ role: m.role === 'user' ? 'user' : 'model' as const, text: m.text }))
+          .map(m => ({ role: (m.role === 'user' ? 'user' : 'model') as 'user' | 'model', text: m.text }))
 
         res = await sendChat({ pregunta: texto, historial: historialActual })
       }
