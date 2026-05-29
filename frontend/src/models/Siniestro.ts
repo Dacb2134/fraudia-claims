@@ -52,9 +52,15 @@ export interface SiniestroDetalle {
     valor: number
     nivel: 'VERDE' | 'AMARILLO' | 'ROJO'
     alertas: string
-    reglas_criticas: string[]
+    reglas_criticas: string | ReglaCritica[]
     calculado_en: string | null
   }
+}
+
+export interface ReglaCritica {
+  regla: string
+  codigo: string
+  clasificacion: string
 }
 
 export interface SiniestrosResponse {

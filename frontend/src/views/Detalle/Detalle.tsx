@@ -104,9 +104,17 @@ export default function Detalle({
     }] : []),
   ]
 
-  // Alertas como factores de riesgo
+  // Parsear reglas_criticas (backend envía string JSON o array)
+  const reglas: Array<{ regla: string; codigo: string; clasificacion: string }> = (() => {
+    const raw = detalle.score.reglas_criticas
+    if (!raw) return []
+    if (Array.isArray(raw)) return raw as Array<{ regla: string; codigo: string; clasificacion: string }>
+    try { return JSON.parse(raw as string) } catch { return [] }
+  })()
+
+  // Alertas separadas por " | "
   const alertas = detalle.score.alertas
-    ? detalle.score.alertas.split(/[,;]/).map(a => a.trim()).filter(Boolean)
+    ? detalle.score.alertas.split('|').map(a => a.trim()).filter(Boolean)
     : []
 
   // Documentos
@@ -318,27 +326,31 @@ export default function Detalle({
                 Factores de Riesgo Detectados
               </h2>
 
-              {/* Reglas críticas */}
-              {detalle.score.reglas_criticas.length > 0 && detalle.score.reglas_criticas.map((r, i) => (
+              {/* Reglas críticas (parseadas del backend) */}
+              {reglas.map((r, i) => (
                 <div key={i} className="risk-factor" style={{ background: 'rgba(255,218,214,0.2)', borderLeft: '4px solid #ba1a1a' }}>
                   <div className="risk-factor-left">
                     <span className="material-symbols-outlined" style={{ color: '#ba1a1a' }}>report</span>
-                    <span style={{ fontFamily: 'JetBrains Mono', fontSize: 12, color: '#ba1a1a', fontWeight: 700 }}>{r}</span>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <span style={{ fontFamily: 'JetBrains Mono', fontSize: 11, color: '#ba1a1a', fontWeight: 700 }}>{r.codigo}</span>
+                      <span style={{ fontSize: 13 }}>{r.regla}</span>
+                    </div>
                   </div>
+                  <span style={{ fontSize: 11, fontWeight: 700, fontFamily: 'JetBrains Mono', color: '#ba1a1a' }}>{r.clasificacion}</span>
                 </div>
               ))}
 
-              {/* Alertas */}
+              {/* Alertas del motor de reglas */}
               {alertas.map((alerta, i) => (
-                <div key={`a-${i}`} className="risk-factor" style={{ background: i === 0 ? 'rgba(255,218,214,0.15)' : 'rgba(222,233,252,0.3)', borderLeft: `4px solid ${i === 0 ? '#ba1a1a' : '#c4c6d3'}` }}>
+                <div key={`a-${i}`} className="risk-factor" style={{ background: 'rgba(222,233,252,0.3)', borderLeft: '4px solid #c4c6d3' }}>
                   <div className="risk-factor-left">
-                    <span className="material-symbols-outlined" style={{ color: i === 0 ? '#ba1a1a' : '#434652' }}>warning</span>
+                    <span className="material-symbols-outlined" style={{ color: '#434652' }}>warning</span>
                     <span style={{ fontSize: 13 }}>{alerta}</span>
                   </div>
                 </div>
               ))}
 
-              {alertas.length === 0 && detalle.score.reglas_criticas.length === 0 && (
+              {alertas.length === 0 && reglas.length === 0 && (
                 <p style={{ color: '#434652', fontSize: 13 }}>No se detectaron alertas críticas.</p>
               )}
 

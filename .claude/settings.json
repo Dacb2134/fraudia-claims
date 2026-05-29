@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx playwright *)",
+      "Bash(node -e \"require\\('playwright'\\)\")",
+      "Read(//tmp/**)",
+      "Bash(cat docker-compose.yml)",
+      "Bash(ls *.yml *.yaml)",
+      "Bash(docker exec *)",
+      "PowerShell(docker exec fraudia-claims-frontend-1 ls /app/src/views /app/src/models /app/src/controllers 2>&1)",
+      "PowerShell(docker exec fraudia-claims-frontend-1 cat /app/src/App.tsx 2>&1)",
+      "PowerShell(npm install -g @playwright/test --prefer-offline 2>&1)",
+      "PowerShell(npx playwright install chromium 2>&1)",
+      "PowerShell(docker exec fraudia-claims-frontend-1 cat /app/src/views/Login/Login.tsx 2>&1)",
+      "PowerShell(docker exec fraudia-claims-frontend-1 cat /app/src/components/login/Login.tsx 2>&1)"
+    ]
+  }
+}

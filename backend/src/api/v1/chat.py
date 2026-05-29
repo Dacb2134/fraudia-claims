@@ -70,7 +70,7 @@ TOP 5 SINIESTROS DE MAYOR RIESGO:
 {json.dumps([dict(r) for r in top5], ensure_ascii=False, default=str)}
 
 TOP 3 PROVEEDORES CON MÁS ALERTAS ROJAS:
-{json.dumps([dict(r) for r in top_prov], ensure_ascii=False)}
+{json.dumps([dict(r) for r in top_prov], ensure_ascii=False, default=str)}
 """
 
     if id_siniestro:
