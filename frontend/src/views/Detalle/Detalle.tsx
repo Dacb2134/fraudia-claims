@@ -2,7 +2,7 @@ import { useRef, useEffect, useState } from 'react'
 import './Detalle.css'
 import { useSiniestroDetalle } from '../../controllers/useSiniestroDetalle'
 import { obtenerSesion } from '../../services/authService'
-import { apiFetch, API_URL } from '../../services/api'
+import { apiFetch } from '../../services/api'
 import Sidebar from '../../components/shared/Sidebar'
 
 type DocExpediente = {
