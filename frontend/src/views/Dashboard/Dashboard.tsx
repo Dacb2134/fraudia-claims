@@ -1,4 +1,5 @@
 import './Dashboard.css'
+import Sidebar from '../../components/shared/Sidebar'
 import { useDashboard } from '../../controllers/useDashboard'
 import { obtenerSesion } from '../../services/authService'
 
@@ -16,9 +17,11 @@ function formatMonto(n: number) {
 export default function Dashboard({
   onVerDetalle,
   onLogout,
+  onNav,
 }: {
   onVerDetalle: (id: string) => void
   onLogout: () => void
+  onNav?: (v: string) => void
 }) {
   const { stats, casos, filtro, setFiltro, loading, error } = useDashboard()
   const usuario = obtenerSesion()
@@ -40,40 +43,8 @@ export default function Dashboard({
   return (
     <div className="dashboard-layout">
 
-      {/* Sidebar */}
-      <aside className="sidebar">
-        <div className="sidebar-logo">
-          <h2>FraudIA Claims</h2>
-          <p>Intelligent Detector</p>
-        </div>
-        <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          {([
-            { icon: 'dashboard', label: 'Dashboard', active: true as boolean },
-            { icon: 'assignment', label: 'Gestión de Casos', active: false as boolean },
-            { icon: 'analytics', label: 'Reportes', active: false as boolean },
-            { icon: 'settings', label: 'Configuración', active: false as boolean },
-          ]).map(({ icon, label, active }) => (
-            <a key={label} href="#" className={`nav-link${active ? ' active' : ''}`}>
-              <span className="material-symbols-outlined">{icon}</span>
-              {label}
-            </a>
-          ))}
-          <button onClick={onLogout} className="nav-link" style={{
-            background: 'none', border: 'none', cursor: 'pointer',
-            width: '100%', textAlign: 'left', color: '#ba1a1a', marginTop: '1rem',
-          }}>
-            <span className="material-symbols-outlined">logout</span>
-            Cerrar Sesión
-          </button>
-        </nav>
-        <div className="ai-status">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-            <span className="material-symbols-outlined" style={{ color: '#002662', fontSize: 18 }}>smart_toy</span>
-            <span style={{ fontSize: 12, fontWeight: 700, color: '#002662', fontFamily: 'JetBrains Mono' }}>AI Status</span>
-          </div>
-          <p style={{ fontSize: 12, color: '#434652', margin: 0 }}>Gemini · Motor v4.2 Activo</p>
-        </div>
-      </aside>
+      {/* Sidebar compartido — mismo diseño en todas las vistas */}
+      <Sidebar vistaActiva="dashboard" onNav={onNav ?? (() => {})} onLogout={onLogout} />
 
       {/* Main */}
       <main className="main-content">
