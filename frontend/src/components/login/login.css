@@ -1,0 +1,70 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Hanken Grotesk', 'Inter', sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+.login-page {
+  min-height: 100vh;
+  width: 100vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: linear-gradient(135deg, #001a5e 0%, #0053cf 50%, #0069ff 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.login-bg-blob-1 {
+  position: fixed;
+  top: -10%;
+  right: -10%;
+  width: 500px;
+  height: 500px;
+  background: #0053cf;
+  opacity: 0.25;
+  border-radius: 50%;
+  filter: blur(120px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.login-bg-blob-2 {
+  position: fixed;
+  bottom: -10%;
+  left: -10%;
+  width: 600px;
+  height: 600px;
+  background: #001a5e;
+  opacity: 0.4;
+  border-radius: 50%;
+  filter: blur(150px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  75% { transform: translateX(6px); }
+}
+
+.animate-shake {
+  animation: shake 0.2s ease-in-out 0s 2;
+}
+
+.border-error {
+  border-color: #ba1a1a !important;
+  box-shadow: 0 0 0 3px rgba(186, 26, 26, 0.15) !important;
+}
