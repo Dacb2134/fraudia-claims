@@ -12,14 +12,14 @@ Sistema híbrido de IA para detección de fraudes en siniestros de seguros.
 | Frontend | React 19 + Vite + TypeScript |
 | Backend API | FastAPI (Python 3.11) |
 | Base de datos | MySQL 8.0 |
-| IA / Agente | Claude API (Anthropic) |
+| IA / Agente | Gemini API |
 | Orquestación | Docker + Docker Compose |
 
 ---
 
 ## Requisitos previos
 
-Solo necesitas tener instalado en tu máquina:
+Solo necesitas tener instalado:
 
 1. **Git**
 2. **Docker Desktop** — debe estar **abierto y corriendo** antes de cualquier comando
@@ -30,81 +30,134 @@ No necesitas instalar Python, Node.js ni MySQL localmente.
 
 ## Primera vez — configuración inicial
 
-### 1. Clonar el repositorio
+### Paso 1 — Clonar el repositorio
 
 ```bash
-git clone <URL_DEL_REPO>
+git clone https://github.com/Dacb2134/fraudia-claims.git
 cd fraudia-claims
 ```
 
-### 2. Crear el archivo de variables de entorno
+### Paso 2 — Crear el archivo de variables de entorno
 
-```bash
-# Copiar la plantilla
-cp backend/.env.example backend/.env
-```
+En la carpeta `backend/` busca el archivo `.env.example`, cópialo y renómbralo a `.env`.
 
-Abrir `backend/.env` y completar:
+En VS Code: clic derecho sobre `.env.example` → Copy → pegar en la misma carpeta → renombrar a `.env`
+
+El archivo debe quedar exactamente así — **no cambies nada excepto la API key**:
 
 ```env
 MYSQL_ROOT_PASSWORD=root
 MYSQL_DATABASE=reasonscore_db
 DB_URL=mysql+pymysql://root:root@db:3306/reasonscore_db
-ANTHROPIC_API_KEY=sk-ant-XXXXXXXXXXXXXXXX   # ← pedir al líder del equipo
-SECRET_KEY=cualquier_cadena_larga_random
+GEMINI_API_KEY=tu_api_key_aqui
+SECRET_KEY=fraudia2026hackiathon_clave_secreta
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=60
 ```
 
-> ⚠️ **Nunca subas el `.env` a GitHub.** Ya está en el `.gitignore`.
+> ⚠️ La `GEMINI_API_KEY` te la pasa Diego por WhatsApp. Nunca la subas a GitHub.
 
-### 3. Construir y levantar los contenedores
+### Paso 3 — Levantar los contenedores
 
-```bash
+Abre una terminal en la raíz del proyecto y ejecuta:
+
+```powershell
 docker-compose up --build
 ```
 
-La primera vez tarda ~5 minutos descargando imágenes. Las siguientes veces es instantáneo.
-
-Cuando veas esto en la terminal, todo está listo:
+La primera vez tarda ~5 minutos. Espera hasta ver **los tres mensajes** antes de continuar:
 
 ```
-frontend-1  |   ➜  Local:   http://localhost:5173/
-api-1       | 🚀 Arrancando FastAPI...
-db-1        | ready for connections. port: 3306
+db-1   | ready for connections. port: 3306
+api-1  | ✅ MySQL listo
+api-1  | INFO: Application startup complete.
 ```
 
-### 4. Crear las tablas en la base de datos
+> ⚠️ No sigas al paso 4 hasta ver exactamente esos mensajes. Los errores de conexión que aparecen antes son normales — el API espera a que MySQL esté listo.
 
-**Abrir una segunda terminal** (dejar la primera con Docker corriendo) y ejecutar:
+### Paso 4 — Crear las tablas (segunda terminal)
 
-```bash
-cat db/schema.sql | docker-compose exec -T db mysql -u root -proot reasonscore_db
+**Deja la Terminal 1 corriendo** y abre una **Terminal 2** nueva en la misma carpeta:
+
+```powershell
+# Copiar el schema al contenedor
+docker cp db/schema.sql fraudia-claims-db-1:/schema.sql
+
+# Crear las tablas
+docker-compose exec db mysql -u root -proot reasonscore_db -e "source /schema.sql"
+
+# Verificar que las tablas se crearon
+docker-compose exec db mysql -u root -proot reasonscore_db -e "SHOW TABLES;"
 ```
 
-Solo se hace **una vez**. Si el volumen de MySQL ya existe de antes, este paso no es necesario.
+Debes ver esto:
+```
++---------------------------+
+| Tables_in_reasonscore_db  |
++---------------------------+
+| alertas                   |
+| asegurados                |
+| documentos                |
+| log_consultas_agente      |
+| polizas                   |
+| proveedores               |
+| scores_riesgo             |
+| siniestros                |
+| usuarios                  |
+| vehiculos                 |
++---------------------------+
+```
 
-### 5. Cargar los datos sintéticos
+### Paso 5 — Cargar los datos sintéticos
 
-```bash
+```powershell
 docker-compose exec api python poblar_bd.py
 ```
 
-Solo se hace **una vez** (o cada vez que quieras resetear los datos).
+Debes ver:
+```
+✅ Base de datos poblada correctamente.
+```
+
+### Paso 6 — Verificar que todo funciona
+
+Abre el navegador en estas URLs:
+
+| URL | Qué deberías ver |
+|-----|-----------------|
+| http://localhost:5173 | Dashboard del frontend |
+| http://localhost:8000/docs | Swagger con todos los endpoints |
+| http://localhost:8000/api/v1/stats | JSON con estadísticas |
 
 ---
 
 ## Uso diario — arrancar el proyecto
 
-```bash
-# Levantar todo
+```powershell
+# Levantar (sin --build, es más rápido)
 docker-compose up
 
-# Apagar todo
+# Apagar
 docker-compose down
 ```
 
-> No uses `--build` en el uso diario, solo cuando cambies el `Dockerfile` o el `requirements.txt`.
+> Solo usa `--build` si cambiaste el `Dockerfile` o el `requirements.txt`.
+
+> El paso 4 (schema) y el paso 5 (poblar) **solo se hacen una vez**. No los repitas a menos que hayas corrido `docker-compose down -v`.
+
+---
+
+## Si algo sale mal — resetear todo
+
+```powershell
+# Borra contenedores Y volumen de MySQL (datos se pierden)
+docker-compose down -v
+
+# Volver a levantar limpio
+docker-compose up --build
+```
+
+Luego repetir los pasos 4 y 5.
 
 ---
 
@@ -112,12 +165,34 @@ docker-compose down
 
 | Servicio | URL |
 |----------|-----|
-| 🎨 Frontend (Dashboard) | http://localhost:5173 |
+| 🎨 Frontend | http://localhost:5173 |
 | ⚙️ API REST | http://localhost:8000 |
-| 📖 Swagger (docs interactivos) | http://localhost:8000/docs |
+| 📖 Swagger docs | http://localhost:8000/docs |
 | 🗄️ MySQL Workbench | `localhost:3307` · user: `root` · pass: `root` |
 
-> MySQL expone el puerto **3307** (no 3306) para evitar conflicto con MySQL local.
+> MySQL usa el puerto **3307** externamente (no 3306) para no chocar con MySQL local.
+
+---
+
+## Endpoints disponibles
+
+```
+GET  /api/v1/stats                    → KPIs para el dashboard
+GET  /api/v1/siniestros               → Lista priorizada por score
+GET  /api/v1/siniestros?nivel_riesgo=ROJO  → Filtrar por semáforo
+GET  /api/v1/siniestros?ramo=Vehículos     → Filtrar por ramo
+GET  /api/v1/siniestros/{id}          → Detalle de un siniestro
+POST /api/v1/chat                     → Agente IA (ver ejemplo abajo)
+```
+
+**Ejemplo chat:**
+```json
+POST /api/v1/chat
+{
+  "pregunta": "¿Cuáles son los 5 siniestros con mayor riesgo?",
+  "contexto_siniestro": "SIN-00018"
+}
+```
 
 ---
 
@@ -125,83 +200,82 @@ docker-compose down
 
 ```
 fraudia-claims/
-├── backend/                  # API FastAPI + Motor de reglas
+├── backend/
 │   ├── src/
-│   │   ├── api/v1/           # Endpoints: siniestros, chat, stats
-│   │   ├── core/             # Conexión BD, configuración
-│   │   └── engine/           # Motor de reglas deterministas
-│   ├── main.py               # Entry point de la API
-│   ├── poblar_bd.py          # Carga el CSV a MySQL
+│   │   ├── api/v1/
+│   │   │   ├── siniestros.py   ← GET /siniestros
+│   │   │   ├── stats.py        ← GET /stats
+│   │   │   └── chat.py         ← POST /chat (agente IA)
+│   │   ├── core/
+│   │   │   └── database.py     ← conexión MySQL
+│   │   └── engine/
+│   │       └── rules_evaluator.py  ← motor de reglas
+│   ├── main.py                 ← entry point FastAPI
+│   ├── poblar_bd.py            ← carga CSV a MySQL
 │   ├── requirements.txt
 │   ├── Dockerfile
-│   └── .env.example          # Plantilla de variables (copiar a .env)
-│
-├── frontend/                 # React + Vite + TypeScript
+│   └── .env.example            ← copiar a .env
+├── frontend/
 │   ├── src/
 │   └── Dockerfile
-│
-├── ai_data_core/             # Datos, notebooks y agente IA
-│   ├── agents/               # Orquestador, NLP, prompts
-│   ├── data/synthetic/       # CSV con siniestros sintéticos
-│   └── notebooks/            # Exploración y evaluación
-│
+├── ai_data_core/
+│   ├── agents/                 ← orquestador y NLP
+│   └── data/synthetic/         ← CSVs con datos sintéticos
 ├── db/
-│   └── schema.sql            # DDL completo de MySQL
-│
-├── docs/                     # Documentación técnica
-├── docker-compose.yml
-└── .gitignore
+│   └── schema.sql              ← DDL de todas las tablas
+├── docs/
+│   └── ai_ethics.md            ← ética y privacidad
+└── docker-compose.yml
 ```
 
 ---
 
 ## Comandos útiles
 
-```bash
-# Ver logs de un servicio específico
-docker-compose logs api
-docker-compose logs db
-docker-compose logs frontend
+```powershell
+# Ver logs de un servicio
+docker-compose logs -f api
+docker-compose logs -f db
+docker-compose logs -f frontend
 
-# Entrar a la terminal del contenedor del backend
+# Entrar al contenedor del backend
 docker-compose exec api bash
 
-# Entrar a MySQL desde la terminal
+# Entrar a MySQL
 docker-compose exec db mysql -u root -proot reasonscore_db
 
-# Resetear todo (borra datos de MySQL también)
-docker-compose down -v
-# Luego volver a hacer los pasos 3, 4 y 5
-
-# Reconstruir solo el backend (cuando cambias requirements.txt)
+# Reconstruir solo el backend
 docker-compose up --build api
 ```
 
 ---
 
-## División del equipo
+## Problemas frecuentes
 
-| Miembro | Responsabilidad |
-|---------|----------------|
-| **Miembro 1** | Dataset sintético · Motor de reglas · Modelo ML/NLP (`backend/src/engine/`, `ai_data_core/`) |
-| **Miembro 2** | Dashboard frontend · Semáforo visual · Red de relaciones (`frontend/src/`) |
-| **Miembro 3** | Agente Claude API · Explicabilidad del score · Documentación · Pitch (`backend/src/api/v1/chat.py`, `docs/`) |
+**Error: `Can't connect to local MySQL server through socket`**
+MySQL aún no terminó de arrancar. Espera a ver `ready for connections. port: 3306` en los logs y vuelve a intentar.
+
+**Error: `Table doesn't exist`**
+No corriste el paso 4. Ejecuta el `docker cp` y el `source /schema.sql`.
+
+**Error: `Access denied for user root`**
+El volumen tiene una contraseña vieja. Corre `docker-compose down -v` y vuelve a empezar desde el paso 3.
+
+**Error: `ports are not available: 3306`**
+Tienes MySQL local corriendo. El `docker-compose.yml` ya mapea al puerto `3307`, no debería pasar. Verifica que tu `docker-compose.yml` tenga `3307:3306`.
+
+**El API se reinicia en bucle con errores de conexión**
+Normal durante los primeros 20-30 segundos. Espera a ver `✅ MySQL listo`.
+
+**No veo el `.env.example` en Windows**
+Windows oculta archivos que empiezan con punto. Ábrelo desde VS Code donde sí aparece.
 
 ---
 
-## Solución de problemas frecuentes
+## División del equipo
 
-**`exec /entrypoint.sh: no such file or directory`**  
-El `entrypoint.sh` tiene saltos de línea Windows (CRLF). Verifica que el `Dockerfile` use `CMD` directo sin script externo.
-
-**`ports are not available: 3306`**  
-Tienes MySQL corriendo localmente. El `docker-compose.yml` ya mapea al puerto `3307` para evitarlo.
-
-**`Can't initialize batch_readline`**  
-La carpeta `db/` no existe o el path del `schema.sql` está mal. Crea la carpeta `db/` en la raíz y pon el `schema.sql` ahí.
-
-**La API se reinicia en bucle**  
-MySQL aún no terminó de arrancar. Espera 30 segundos y se estabiliza solo.
-
-**`Table doesn't exist`**  
-No corriste el paso 4. Ejecuta `docker-compose exec db mysql -u root -proot reasonscore_db < db/schema.sql`.
+| Miembro | Área | Archivos principales |
+|---------|------|---------------------|
+| Diego | Backend + IA | `backend/src/`, `ai_data_core/` |
+| Miembro 2 | Frontend | `frontend/src/` |
+| Miembro 3 | Agente + Docs + Pitch | `backend/src/api/v1/chat.py`, `docs/` |
