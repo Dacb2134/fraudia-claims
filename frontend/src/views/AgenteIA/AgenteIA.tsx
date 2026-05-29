@@ -115,7 +115,14 @@ export default function AgenteIA({ onNav, onLogout }: NavProps) {
         setArchivoAdjunto(null)
         if (fileInputRef.current) fileInputRef.current.value = ''
       } else {
-        res = await sendChat({ pregunta: texto })
+        // Construir historial de la sesión para multi-turn memory
+        // Enviamos los últimos 8 mensajes (4 intercambios user↔ai)
+        const historialActual = messages
+          .slice(-8)
+          .filter(m => m.role === 'user' || m.role === 'ai')
+          .map(m => ({ role: m.role === 'user' ? 'user' : 'model' as const, text: m.text }))
+
+        res = await sendChat({ pregunta: texto, historial: historialActual })
       }
       setMessages(prev => [...prev, { role: 'ai', text: res.respuesta }])
     } catch (err: unknown) {
