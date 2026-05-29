@@ -21,4 +21,4 @@ CMD ["sh", "-c", "\
     echo '  Reintentando en 3s...'; sleep 3; \
   done && \
   echo '🚀 Arrancando FastAPI...' && \
-  uvicorn main:app --host 0.0.0.0 --port 8000 --reload"]
+  uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000} --reload"]
