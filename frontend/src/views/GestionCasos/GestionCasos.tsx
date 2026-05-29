@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
 import Sidebar from '../../components/shared/Sidebar'
+import { obtenerSesion } from '../../services/authService'
 import type { NavProps } from '../../App'
 import type { Siniestro } from '../../models'
 import { apiFetch, API_URL } from '../../services/api'
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 const RAMOS      = ['Todos los ramos', 'Vehículos', 'Hogar', 'Salud', 'Vida', 'Generales']
-const SUCURSALES = ['Todas las sucursales', 'Quito Norte', 'Quito Sur', 'Guayaquil', 'Cuenca', 'Ambato', 'Ibarra', 'Manta', 'Loja']
+const SUCURSALES = ['Todas las sucursales', 'Quito', 'Guayaquil', 'Cuenca', 'Ambato', 'Loja', 'Ibarra', 'Manta', 'Riobamba', 'Portoviejo', 'Esmeraldas']
 const PAGE_SIZE  = 25
 
 function fmt(n: number) {
@@ -42,6 +43,13 @@ export default function GestionCasos({ onNav, onLogout, onVerDetalle }: NavProps
   const [tabActivo,   setTabActivo]   = useState<'todos'|'ROJO'|'AMARILLO'|'VERDE'>('todos')
   const [marcados,    setMarcados]    = useState<Record<string, 'revision'|'limpio'>>({})
   const [toast,       setToast]       = useState<string | null>(null)
+  const [showNotif,   setShowNotif]   = useState(false)
+
+  const usuario  = obtenerSesion()
+  const rolLabel = usuario?.rol === 'admin'      ? 'Administrador'
+                 : usuario?.rol === 'supervisor' ? 'Supervisor'
+                 : 'Analista de Riesgos'
+  const inicial  = usuario?.nombre?.charAt(0).toUpperCase() ?? 'A'
 
   const nivelEfectivo = tabActivo !== 'todos' ? tabActivo : nivelFiltro || undefined
 
@@ -107,21 +115,56 @@ export default function GestionCasos({ onNav, onLogout, onVerDetalle }: NavProps
           </div>
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-2">
-              <button className="p-2 text-on-surface-variant hover:bg-surface-container-high transition-colors rounded-full relative">
-                <span className="material-symbols-outlined">notifications</span>
-                <span className="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"/>
-              </button>
-              <button className="p-2 text-on-surface-variant hover:bg-surface-container-high transition-colors rounded-full">
+              {/* Campana */}
+              <div style={{ position: 'relative' }}>
+                <button
+                  onClick={() => setShowNotif(v => !v)}
+                  className="p-2 text-on-surface-variant hover:bg-surface-container-high transition-colors rounded-full relative">
+                  <span className="material-symbols-outlined">notifications</span>
+                  <span className="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"/>
+                </button>
+                {showNotif && (
+                  <div style={{
+                    position: 'absolute', top: '100%', right: 0, marginTop: 8,
+                    background: '#fff', borderRadius: 12, border: '1px solid #c4c6d3',
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.12)', width: 300, zIndex: 200,
+                  }}>
+                    <div style={{ padding: '12px 16px', borderBottom: '1px solid #c4c6d3', fontWeight: 700, fontSize: 13, color: '#002662' }}>
+                      Alertas del Sistema
+                    </div>
+                    {casos.filter(c => c.nivel_riesgo === 'ROJO').slice(0, 4).map(c => (
+                      <div
+                        key={c.id_siniestro}
+                        onClick={() => { onVerDetalle(c.id_siniestro); setShowNotif(false) }}
+                        style={{ padding: '10px 16px', borderBottom: '1px solid #f0f2fa', cursor: 'pointer', fontSize: 12 }}>
+                        <strong style={{ color: '#ba1a1a' }}>{c.id_siniestro}</strong>
+                        <span style={{ color: '#434652' }}> · {c.ramo} · Score {c.score_riesgo}</span>
+                      </div>
+                    ))}
+                    <div style={{ padding: '8px 16px' }}>
+                      <button
+                        onClick={() => setShowNotif(false)}
+                        style={{ width: '100%', padding: 6, background: '#e6eeff', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 12, color: '#002662', fontWeight: 600 }}>
+                        Cerrar
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+              {/* Help → configuración */}
+              <button
+                onClick={() => onNav('configuracion')}
+                className="p-2 text-on-surface-variant hover:bg-surface-container-high transition-colors rounded-full">
                 <span className="material-symbols-outlined">help</span>
               </button>
             </div>
             <div className="h-8 w-[1px] bg-outline-variant"/>
             <div className="flex items-center gap-3">
               <div className="text-right hidden sm:block">
-                <p className="font-label-sm text-label-sm font-bold text-primary">Analista de Riesgos</p>
-                <p className="font-label-sm text-[10px] text-on-surface-variant uppercase">Sede Central</p>
+                <p className="font-label-sm text-label-sm font-bold text-primary">{usuario?.nombre ?? rolLabel}</p>
+                <p className="font-label-sm text-[10px] text-on-surface-variant uppercase">{rolLabel}</p>
               </div>
-              <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-bold border-2 border-primary-container">A</div>
+              <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-bold border-2 border-primary-container">{inicial}</div>
             </div>
           </div>
         </header>

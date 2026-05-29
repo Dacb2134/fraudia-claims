@@ -1,7 +1,8 @@
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useState } from 'react'
 import './Detalle.css'
 import { useSiniestroDetalle } from '../../controllers/useSiniestroDetalle'
 import { obtenerSesion } from '../../services/authService'
+import Sidebar from '../../components/shared/Sidebar'
 
 const NIVEL_COLOR = { ROJO: '#ba1a1a', AMARILLO: '#FFB800', VERDE: '#00A344' }
 const NIVEL_LABEL = { ROJO: 'ALTO RIESGO', AMARILLO: 'MEDIO RIESGO', VERDE: 'BAJO RIESGO' }
@@ -45,6 +46,8 @@ export default function Detalle({
 
   const usuario    = obtenerSesion()
   const chatEndRef = useRef<HTMLDivElement>(null)
+  const [auditoria,       setAuditoria]       = useState(false)
+  const [auditConfirmada, setAuditConfirmada] = useState(false)
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -159,22 +162,30 @@ export default function Detalle({
       {/* Header */}
       <header className="detalle-header">
         <div className="detalle-header-left">
-          <span className="material-symbols-outlined" style={{ color: '#002662' }}>menu</span>
+          <button
+            onClick={onVolver}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, color: '#434652', fontSize: 13, fontFamily: 'JetBrains Mono', padding: '6px 0' }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>arrow_back</span>
+            Volver
+          </button>
+          <span style={{ color: '#c4c6d3' }}>·</span>
           <span style={{ fontSize: 18, fontWeight: 900, color: '#002662' }}>FraudIA Claims</span>
-          <div className="detalle-nav-tabs" style={{ marginLeft: '1rem' }}>
-            <button className="tab-inactive" onClick={onVolver}>Dashboard</button>
-            <button className="tab-active">Gestión de Casos</button>
-            <button className="tab-inactive" onClick={() => onNav?.('reportes')}>Reportes</button>
-          </div>
+          <span style={{ color: '#c4c6d3' }}>·</span>
+          <span style={{ fontSize: 13, color: '#434652', fontFamily: 'JetBrains Mono' }}>
+            Detalle — {detalle.id_siniestro}
+          </span>
         </div>
         <div className="detalle-header-right">
-          <span className="material-symbols-outlined" style={{ color: '#434652', cursor: 'pointer' }}
-            onClick={() => onNav?.('reportes')} title="Reportes">notifications</span>
-          <span className="material-symbols-outlined" style={{ color: '#434652', cursor: 'pointer' }}
-            onClick={() => onNav?.('configuracion')} title="Configuración">help</span>
+          <span
+            className="material-symbols-outlined"
+            style={{ color: '#434652', cursor: 'pointer', fontSize: 22 }}
+            onClick={() => onNav?.('configuracion')}
+            title="Configuración">
+            help
+          </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <span style={{ fontSize: 12, color: '#434652', fontFamily: 'JetBrains Mono' }}>
-              {usuario?.nombre ?? 'Analista de Riesgos'}
+              {usuario?.nombre ?? 'Analista'}
             </span>
             <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#002662', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 12 }}>
               {usuario?.nombre?.charAt(0).toUpperCase() ?? 'A'}
@@ -185,40 +196,12 @@ export default function Detalle({
 
       <div className="detalle-body">
 
-        {/* Sidebar */}
-        <aside className="detalle-sidebar">
-          <h2>FraudIA</h2>
-          <p>Intelligent Detector</p>
-          <button className="sidebar-nav-link" onClick={onVolver} style={{ background: 'none', border: 'none', cursor: 'pointer', width: '100%', textAlign: 'left' }}>
-            <span className="material-symbols-outlined">dashboard</span>
-            Dashboard
-          </button>
-          <button className="sidebar-nav-link active" onClick={() => onNav?.('casos')} style={{ background: 'none', border: 'none', cursor: 'pointer', width: '100%', textAlign: 'left' }}>
-            <span className="material-symbols-outlined">assignment</span>
-            Gestión de Casos
-          </button>
-          <button className="sidebar-nav-link" onClick={() => onNav?.('reportes')} style={{ background: 'none', border: 'none', cursor: 'pointer', width: '100%', textAlign: 'left' }}>
-            <span className="material-symbols-outlined">analytics</span>
-            Reportes
-          </button>
-          <button className="sidebar-nav-link" onClick={() => onNav?.('configuracion')} style={{ background: 'none', border: 'none', cursor: 'pointer', width: '100%', textAlign: 'left' }}>
-            <span className="material-symbols-outlined">settings</span>
-            Configuración
-          </button>
-          {onLogout && (
-            <button className="sidebar-nav-link" onClick={onLogout} style={{ background: 'none', border: 'none', cursor: 'pointer', width: '100%', textAlign: 'left', color: '#ba1a1a' }}>
-              <span className="material-symbols-outlined">logout</span>
-              Cerrar Sesión
-            </button>
-          )}
-
-          {/* Info del siniestro en sidebar */}
-          <div style={{ marginTop: 'auto', padding: '1rem', background: 'rgba(0,38,98,0.05)', borderRadius: '0.75rem', border: '1px solid rgba(0,38,98,0.1)' }}>
-            <p style={{ fontSize: 10, fontFamily: 'JetBrains Mono', color: '#434652', margin: '0 0 0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Siniestro</p>
-            <p style={{ fontSize: 11, fontWeight: 700, color: '#002662', margin: '0 0 0.25rem', fontFamily: 'JetBrains Mono' }}>{detalle.id_siniestro}</p>
-            <p style={{ fontSize: 11, color: '#434652', margin: 0 }}>{detalle.ramo} · {detalle.sucursal}</p>
-          </div>
-        </aside>
+        {/* Sidebar compartido */}
+        <Sidebar
+          vistaActiva="casos"
+          onNav={onNav ?? (() => {})}
+          onLogout={onLogout ?? (() => {})}
+        />
 
         {/* Main */}
         <main className="detalle-main">
@@ -269,8 +252,28 @@ export default function Detalle({
                   </div>
                 </div>
                 <div className="hero-actions">
-                  <button className="btn-primary" onClick={() => setChatOpen(true)}>Consultar Agente IA</button>
+                  <button className="btn-primary" onClick={() => setChatOpen(true)}>
+                    <span className="material-symbols-outlined" style={{ fontSize: 16 }}>smart_toy</span>
+                    Consultar Agente IA
+                  </button>
                   <button className="btn-outline" onClick={onVolver}>Volver al Dashboard</button>
+                  {!auditConfirmada ? (
+                    <button
+                      onClick={() => setAuditoria(true)}
+                      style={{
+                        padding: '10px 20px', borderRadius: 10, cursor: 'pointer', fontSize: 14, fontWeight: 600,
+                        border: '1.5px solid #ba1a1a', background: 'rgba(186,26,26,0.05)', color: '#ba1a1a',
+                        display: 'flex', alignItems: 'center', gap: 6,
+                      }}>
+                      <span className="material-symbols-outlined" style={{ fontSize: 16 }}>gavel</span>
+                      Iniciar Auditoría
+                    </button>
+                  ) : (
+                    <span style={{ fontSize: 12, color: '#00A344', fontFamily: 'JetBrains Mono', display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <span className="material-symbols-outlined" style={{ fontSize: 16 }}>check_circle</span>
+                      Escalado a Unidad Antifraude
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -507,13 +510,56 @@ export default function Detalle({
       {/* Footer */}
       <footer className="detalle-footer">
         <span style={{ fontWeight: 600, color: '#121c2a' }}>FraudIA Claims</span>
-        <p style={{ margin: 0 }}>Este sistema sugiere revisión, no determina fraude. © 2024 FraudIA Claims.</p>
+        <p style={{ margin: 0 }}>Este sistema sugiere revisión, no determina fraude. © 2026 FraudIA Claims.</p>
         <div>
           <a href="#">Ética AI</a>
           <a href="#">Soporte Técnico</a>
           <a href="#">Documentación</a>
         </div>
       </footer>
+
+      {/* Modal Auditoría */}
+      {auditoria && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+          zIndex: 400, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <div style={{
+            background: '#fff', borderRadius: 16, padding: '2rem',
+            maxWidth: 420, width: '90%', boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+              <div style={{ width: 48, height: 48, borderRadius: 12, background: 'rgba(186,26,26,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 28, color: '#ba1a1a' }}>gavel</span>
+              </div>
+              <div>
+                <h3 style={{ margin: 0, color: '#002662', fontSize: 18 }}>Iniciar Auditoría Formal</h3>
+                <p style={{ margin: 0, fontSize: 12, color: '#747783', fontFamily: 'JetBrains Mono' }}>{detalle.id_siniestro}</p>
+              </div>
+            </div>
+            <p style={{ fontSize: 14, color: '#434652', margin: '0 0 1.5rem', lineHeight: 1.6 }}>
+              Este caso será escalado a la <strong>Unidad Antifraude</strong> para revisión especializada.
+              La acción quedará registrada en el sistema de auditoría.
+            </p>
+            <div style={{ background: '#fff8e6', border: '1px solid #FFB800', borderRadius: 8, padding: '10px 14px', marginBottom: '1.5rem', fontSize: 12, color: '#856404' }}>
+              <strong>Score de riesgo:</strong> {score}/100 · Nivel {nivel}
+              {reglas.length > 0 && <><br/><strong>Reglas críticas:</strong> {reglas.map(r => r.codigo).join(', ')}</>}
+            </div>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button
+                onClick={() => setAuditoria(false)}
+                style={{ flex: 1, padding: '12px', border: '1px solid #c4c6d3', borderRadius: 10, background: 'none', cursor: 'pointer', fontSize: 14 }}>
+                Cancelar
+              </button>
+              <button
+                onClick={() => { setAuditoria(false); setAuditConfirmada(true) }}
+                style={{ flex: 1, padding: '12px', background: '#ba1a1a', color: '#fff', border: 'none', borderRadius: 10, cursor: 'pointer', fontSize: 14, fontWeight: 700 }}>
+                Confirmar Escalamiento
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Chat Panel */}
       {chatOpen && (

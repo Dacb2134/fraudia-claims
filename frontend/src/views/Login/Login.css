@@ -240,6 +240,10 @@
   box-shadow: 0 0 0 3px rgba(0,83,207,0.16);
 }
 
+.lp-input:not(:focus):not(:-webkit-autofill) {
+  background-color: #152540 !important;
+}
+
 /* Fix browser autofill — evita fondo blanco al autocompletar */
 .lp-input:-webkit-autofill,
 .lp-input:-webkit-autofill:hover,

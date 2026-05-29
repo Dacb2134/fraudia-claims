@@ -26,7 +26,8 @@ export default function Dashboard({
 }) {
   const { stats, casos, filtro, setFiltro, loading, error } = useDashboard()
   const usuario = obtenerSesion()
-  const [busqueda, setBusqueda] = useState('')
+  const [busqueda,   setBusqueda]   = useState('')
+  const [showNotif,  setShowNotif]  = useState(false)
 
   const total    = stats?.resumen.total_siniestros ?? 0
   const pctRojo  = total ? ((stats?.semaforo.rojo.total    ?? 0) / total * 100).toFixed(1) : '0'
@@ -72,10 +73,46 @@ export default function Dashboard({
                 onChange={e => setBusqueda(e.target.value)}
               />
             </div>
-            <button className="icon-btn">
-              <span className="material-symbols-outlined">notifications</span>
-              <span className="notif-dot" />
-            </button>
+            <div style={{ position: 'relative' }}>
+              <button
+                className="icon-btn"
+                onClick={() => setShowNotif(v => !v)}
+                style={{ position: 'relative' }}>
+                <span className="material-symbols-outlined">notifications</span>
+                <span className="notif-dot" />
+              </button>
+              {showNotif && (
+                <div style={{
+                  position: 'absolute', top: '100%', right: 0, marginTop: 8, zIndex: 200,
+                  background: '#fff', borderRadius: 12, border: '1px solid #c4c6d3',
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.12)', width: 300,
+                }}>
+                  <div style={{ padding: '12px 16px', borderBottom: '1px solid #c4c6d3', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: '#002662' }}>Casos de Alto Riesgo</span>
+                    <button onClick={() => setShowNotif(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: '#747783', lineHeight: 1 }}>×</button>
+                  </div>
+                  {casosFiltrados.filter(c => c.nivel_riesgo === 'ROJO').slice(0, 5).map(c => (
+                    <div
+                      key={c.id_siniestro}
+                      onClick={() => { onVerDetalle(c.id_siniestro); setShowNotif(false) }}
+                      style={{ padding: '10px 16px', borderBottom: '1px solid #f0f2fa', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: '#ba1a1a', fontFamily: 'JetBrains Mono' }}>{c.id_siniestro}</p>
+                        <p style={{ margin: 0, fontSize: 11, color: '#434652' }}>{c.ramo} · {c.sucursal}</p>
+                      </div>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: '#ba1a1a' }}>Score {c.score_riesgo}</span>
+                    </div>
+                  ))}
+                  <div style={{ padding: '8px 16px' }}>
+                    <button
+                      onClick={() => { onNav?.('casos'); setShowNotif(false) }}
+                      style={{ width: '100%', padding: '6px', background: '#e6eeff', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 12, color: '#002662', fontWeight: 600 }}>
+                      Ver todos los casos →
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
             <div className="user-info">
               <div style={{ textAlign: 'right' }}>
                 <p style={{ fontSize: 12, fontWeight: 700, color: '#002662', margin: 0 }}>{usuario?.nombre ?? rolLabel}</p>
@@ -376,7 +413,7 @@ export default function Dashboard({
         </div>
 
         <footer className="dashboard-footer">
-          <p style={{ margin: 0 }}>Este sistema sugiere revisión, no determina fraude. © 2024 FraudIA Claims.</p>
+          <p style={{ margin: 0 }}>Este sistema sugiere revisión, no determina fraude. © 2026 FraudIA Claims.</p>
           <div>
             <a href="#">Ética AI</a>
             <a href="#">Soporte Técnico</a>

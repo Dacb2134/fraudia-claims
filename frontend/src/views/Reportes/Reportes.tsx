@@ -279,7 +279,18 @@ export default function Reportes({ onNav, onLogout, onVerDetalle }: NavProps & {
         <footer className="py-3 px-margin-desktop flex justify-between items-center bg-surface-dim border-t border-outline-variant flex-shrink-0">
           <p className="text-xs text-on-surface-variant">Este sistema sugiere revisión, no determina fraude. © 2026 FraudIA Claims.</p>
           <div className="flex gap-4">
-            {['Ética AI', 'Soporte', 'Docs'].map(l => <a key={l} href="#" className="text-xs text-on-surface-variant hover:text-primary">{l}</a>)}
+            {[
+              { label: 'Ética AI',  action: () => onNav('configuracion') },
+              { label: 'Soporte',   action: () => onNav('agente')        },
+              { label: 'Docs',      action: () => onNav('configuracion') },
+            ].map(({ label, action }) => (
+              <button key={label}
+                onClick={action}
+                className="text-xs text-on-surface-variant hover:text-primary"
+                style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+                {label}
+              </button>
+            ))}
           </div>
         </footer>
       </main>

@@ -134,8 +134,12 @@
 .chat-welcome-sub { font-size: 15px; color: #434652; margin: 0; line-height: 1.6; }
 
 /* Messages */
-.chat-row { display: flex; gap: 12px; align-items: flex-start; max-width: 760px; }
+.chat-row { display: flex; gap: 12px; align-items: flex-start; max-width: 760px; margin: 0 auto; width: 100%; }
 .chat-row-user { flex-direction: row-reverse; margin-left: auto; }
+
+.chat-row-user .chat-bubble-user {
+  max-width: 80%;
+}
 
 .chat-avatar-ai {
   width: 32px; height: 32px; flex-shrink: 0;
@@ -213,7 +217,7 @@
 
 /* Footer / input — Nielsen #8: Diseño estético y minimalista */
 .agente-footer {
-  padding: 0.875rem 1.5rem 1rem;
+  padding: 0.875rem 0 1rem;
   background: #fff;
   border-top: 1px solid #e0e2f0;
   flex-shrink: 0;
@@ -226,7 +230,8 @@
   margin: 0 auto;
   display: flex;
   gap: 10px;
-  align-items: center; /* center: evita que el botón quede abajo con 1 línea */
+  align-items: center;
+  padding: 0 1.5rem;
 }
 
 /* Caja del input: fondo y borde */
@@ -325,13 +330,16 @@
 .ai-glow { animation: pulse-soft 3s infinite; }
 
 /* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 1100px) {
+  .agente-panel { display: none; }
+}
+
 @media (max-width: 768px) {
   .agente-header { padding: 0 1rem 0 4rem; }
   .agente-header-right { gap: 0.4rem; }
   .search-box { display: none; }
   .user-text { display: none; }
 
-  .agente-panel { display: none; }
   .chat-area { padding: 1rem; gap: 1rem; }
   .chat-row { max-width: 100%; }
 

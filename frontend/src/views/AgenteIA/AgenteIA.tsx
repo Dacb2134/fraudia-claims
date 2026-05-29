@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import './AgenteIA.css'
 import Sidebar from '../../components/shared/Sidebar'
 import { sendChat, sendChatConArchivo } from '../../services/chatService'
+import { obtenerSesion } from '../../services/authService'
 import type { ChatMessage } from '../../models'
 import type { NavProps } from '../../App'
 
@@ -63,6 +64,16 @@ function renderMarkdown(text: string): string {
     .replace(/(<\/h[234]>|<\/ul>|<hr[^>]*\/>)<\/p>/g, '$1')
 }
 
+function highlightText(text: string, term: string): string {
+  if (!term.trim()) return text
+  const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const regex = new RegExp(`(${escaped})`, 'gi')
+  return text.replace(
+    regex,
+    '<mark style="background:#FFE066;color:#002662;border-radius:2px;padding:0 2px;font-weight:600">$1</mark>'
+  )
+}
+
 // ─── Componente ──────────────────────────────────────────────────────────────
 export default function AgenteIA({ onNav, onLogout }: NavProps) {
   const [messages,       setMessages]       = useState<ChatMessage[]>([])
@@ -76,6 +87,12 @@ export default function AgenteIA({ onNav, onLogout }: NavProps) {
   const [showHelp,       setShowHelp]       = useState(false)
   const chatEndRef   = useRef<HTMLDivElement>(null)
   const textareaRef  = useRef<HTMLTextAreaElement>(null)
+
+  const usuario  = obtenerSesion()
+  const rolLabel = usuario?.rol === 'admin'      ? 'Administrador'
+                 : usuario?.rol === 'supervisor' ? 'Supervisor'
+                 : 'Analista de Riesgos'
+  const inicial  = usuario?.nombre?.charAt(0).toUpperCase() ?? 'A'
 
   // Cargar historial al montar
   useEffect(() => {
@@ -305,10 +322,10 @@ export default function AgenteIA({ onNav, onLogout }: NavProps) {
 
             <div className="user-chip">
               <div className="user-text">
-                <p className="user-name">Analista de Riesgos</p>
-                <p className="user-role">Senior Investigator</p>
+                <p className="user-name">{usuario?.nombre ?? rolLabel}</p>
+                <p className="user-role">{rolLabel}</p>
               </div>
-              <div className="user-avatar">A</div>
+              <div className="user-avatar">{inicial}</div>
             </div>
           </div>
         </header>
@@ -336,7 +353,9 @@ export default function AgenteIA({ onNav, onLogout }: NavProps) {
                 <div className="chat-welcome-icon ai-glow">
                   <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1", fontSize: 40, color: '#fff' }}>smart_toy</span>
                 </div>
-                <h3 className="chat-welcome-title">Hola, Analista. ¿En qué puedo ayudarte hoy?</h3>
+                <h3 className="chat-welcome-title">
+                  Hola, {usuario?.nombre?.split(' ')[0] ?? 'Analista'}. ¿En qué puedo ayudarte hoy?
+                </h3>
                 <p className="chat-welcome-sub">Analizo miles de reclamos en tiempo real para identificar patrones inusuales y conexiones de fraude ocultas.</p>
                 <p style={{ fontSize: 11, color: '#747783', marginTop: 8, fontStyle: 'italic' }}>Las conversaciones se guardan automáticamente en tu dispositivo.</p>
               </div>
@@ -354,10 +373,19 @@ export default function AgenteIA({ onNav, onLogout }: NavProps) {
                   {msg.role === 'ai' ? (
                     <div
                       className="markdown-body"
-                      dangerouslySetInnerHTML={{ __html: renderMarkdown(msg.text) }}
+                      dangerouslySetInnerHTML={{
+                        __html: busqueda
+                          ? highlightText(renderMarkdown(msg.text), busqueda)
+                          : renderMarkdown(msg.text)
+                      }}
                     />
                   ) : (
-                    <p style={{ margin: 0 }}>{msg.text}</p>
+                    <p
+                      style={{ margin: 0 }}
+                      dangerouslySetInnerHTML={{
+                        __html: busqueda ? highlightText(msg.text, busqueda) : msg.text
+                      }}
+                    />
                   )}
                 </div>
                 {msg.role === 'user' && (
