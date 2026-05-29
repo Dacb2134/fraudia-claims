@@ -79,7 +79,7 @@ db-1        | ready for connections. port: 3306
 **Abrir una segunda terminal** (dejar la primera con Docker corriendo) y ejecutar:
 
 ```bash
-docker-compose exec db mysql -u root -proot reasonscore_db < db/schema.sql
+cat db/schema.sql | docker-compose exec -T db mysql -u root -proot reasonscore_db
 ```
 
 Solo se hace **una vez**. Si el volumen de MySQL ya existe de antes, este paso no es necesario.
