@@ -59,10 +59,17 @@ def preparar_features(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
     """Prepara el DataFrame con todas las features necesarias."""
     df = df.copy()
 
+    # MySQL DECIMAL → Python Decimal → pandas object; convertir antes de operar
+    for col in ["monto_reclamado", "monto_estimado", "suma_asegurada",
+                "score_riesgo", "dias_desde_inicio_poliza", "dias_desde_fin_poliza",
+                "dias_entre_ocurrencia_reporte", "historial_siniestros_asegurado"]:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
+
     # Features derivadas
-    df["ratio_monto"]      = df["monto_reclamado"] / (df["suma_asegurada"] + 1)
+    df["ratio_monto"]       = df["monto_reclamado"] / (df["suma_asegurada"] + 1)
     df["es_borde_vigencia"] = (df["dias_desde_inicio_poliza"] <= 30).astype(int)
-    df["reporte_tardio"]   = (df["dias_entre_ocurrencia_reporte"] > 7).astype(int)
+    df["reporte_tardio"]    = (df["dias_entre_ocurrencia_reporte"] > 7).astype(int)
     df["tiene_doc_inconsistente"] = df["tiene_doc_inconsistente"].map(
         {True: 1, False: 0, "True": 1, "False": 0}).fillna(0).astype(int)
 
@@ -74,7 +81,8 @@ def preparar_features(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
         encoders[col] = le
 
     features_finales = FEATURES_NUMERICAS + [c + "_enc" for c in FEATURES_CATEGORICAS]
-    return df[features_finales].fillna(0), encoders
+    # Garantizar dtype float para XGBoost (rechaza object)
+    return df[features_finales].fillna(0).astype(float), encoders
 
 
 def _entrenar_con_df(df: pd.DataFrame) -> dict:
