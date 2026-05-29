@@ -14,7 +14,7 @@ from src.core.database import get_db
 router = APIRouter()
 
 # ── Cambiar el modelo aquí cuando quieras ─────────────────────────────────────
-GEMINI_MODEL = "gemini-2.0-flash-lite"   # ← esta es la línea para cambiar el modelo
+GEMINI_MODEL = "gemini-1.5-flash"   # ← esta es la línea para cambiar el modelo
 # ─────────────────────────────────────────────────────────────────────────────
 
 class ChatRequest(BaseModel):
@@ -183,7 +183,20 @@ Pregunta del analista: {request.pregunta}"""
         }
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error del agente: {str(e)}")
+        err_str = str(e)
+        # Manejo amigable de errores comunes
+        if "429" in err_str or "quota" in err_str.lower() or "rate" in err_str.lower():
+            detail = (
+                "⚠️ El agente IA está temporalmente no disponible por límite de uso de la API de Google. "
+                "Espera unos minutos y vuelve a intentarlo, o verifica que la GEMINI_API_KEY tenga cuota disponible."
+            )
+        elif "API_KEY" in err_str or "api key" in err_str.lower():
+            detail = "⚠️ La clave de API de Gemini no es válida. Verifica la variable GEMINI_API_KEY."
+        elif "404" in err_str or "not found" in err_str.lower():
+            detail = f"⚠️ Modelo Gemini no disponible ({GEMINI_MODEL}). Contacta al administrador."
+        else:
+            detail = f"⚠️ Error del agente: {err_str[:200]}"
+        raise HTTPException(status_code=500, detail=detail)
 
 
 @router.post("/archivo")
@@ -249,4 +262,9 @@ async def chat_con_archivo(
         }
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error procesando archivo: {str(e)}")
+        err_str = str(e)
+        if "429" in err_str or "quota" in err_str.lower():
+            detail = "⚠️ Límite de uso de la API alcanzado. Espera unos minutos y vuelve a intentarlo."
+        else:
+            detail = f"⚠️ Error procesando archivo: {err_str[:200]}"
+        raise HTTPException(status_code=500, detail=detail)

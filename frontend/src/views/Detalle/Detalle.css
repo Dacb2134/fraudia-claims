@@ -648,3 +648,50 @@
 
 .chat-send-btn:hover:not(:disabled) { background: #003a8f; }
 .chat-send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ════════════ RESPONSIVE ════════════ */
+@media (max-width: 1024px) {
+  .hero-grid { grid-template-columns: 1fr; }
+  .two-col-grid { grid-template-columns: 1fr; }
+  .three-col-grid { grid-template-columns: 1fr; }
+  .detalle-main { padding: 1.5rem; }
+}
+
+@media (max-width: 768px) {
+  /* Top bar 56px de App.tsx */
+  .detalle-layout { padding-top: 56px; }
+
+  .detalle-header { padding: 0 1rem; height: 52px; }
+  .detalle-header-right { display: none; }
+
+  .detalle-main { padding: 0.75rem; gap: 1.25rem; }
+
+  .hero-card { flex-direction: column; align-items: flex-start; }
+  .hero-grid { grid-template-columns: 1fr; gap: 1rem; }
+  .hero-title { font-size: 22px; }
+  .hero-actions { flex-wrap: wrap; }
+  .hero-actions button { flex: 1; font-size: 14px; padding: 8px 16px; }
+
+  .two-col-grid { grid-template-columns: 1fr; gap: 1rem; }
+  .three-col-grid { grid-template-columns: 1fr; gap: 1rem; }
+
+  .detalle-meta-grid { grid-template-columns: 1fr 1fr; }
+
+  /* Chat panel: ocupa más pantalla en mobile */
+  .chat-panel {
+    width: calc(100vw - 2rem);
+    right: 1rem;
+    height: 400px;
+    bottom: 4.5rem;
+  }
+
+  .detalle-footer { flex-direction: column; gap: 0.5rem; padding: 0.75rem 1rem; text-align: center; }
+  .ai-fab { width: 48px; height: 48px; bottom: 1.25rem; right: 1.25rem; }
+}
+
+@media (max-width: 480px) {
+  .detalle-main { padding: 0.5rem; }
+  .section-card { padding: 1rem; }
+  .hero-title { font-size: 18px; }
+  .detalle-meta-grid { grid-template-columns: 1fr; }
+}

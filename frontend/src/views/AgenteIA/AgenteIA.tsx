@@ -120,7 +120,11 @@ export default function AgenteIA({ onNav, onLogout }: NavProps) {
       setMessages(prev => [...prev, { role: 'ai', text: res.respuesta }])
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error desconocido'
-      setMessages(prev => [...prev, { role: 'ai', text: `Error al conectar con el agente: ${msg}` }])
+      const esQuota = msg.includes('429') || msg.toLowerCase().includes('quota') || msg.toLowerCase().includes('límite')
+      const textoError = esQuota
+        ? '⚠️ El agente IA está temporalmente no disponible por límite de uso de la API. Espera unos minutos y vuelve a intentarlo.'
+        : `⚠️ No se pudo conectar con el agente. Verifica que el backend esté activo y la API key configurada.`
+      setMessages(prev => [...prev, { role: 'ai', text: textoError }])
     } finally {
       setLoading(false)
     }
@@ -470,9 +474,6 @@ export default function AgenteIA({ onNav, onLogout }: NavProps) {
                 placeholder={archivoAdjunto ? `Pregunta sobre "${archivoAdjunto.name}"…` : 'Pregunta sobre pólizas, siniestros o proveedores… (Enter para enviar)'}
                 className="input-textarea"
               />
-              <button className="input-icon-btn" title="Micrófono (no disponible en demo)">
-                <span className="material-symbols-outlined">mic</span>
-              </button>
             </div>
             <button
               className="send-btn"

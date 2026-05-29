@@ -220,15 +220,16 @@
 .lp-input {
   width: 100%;
   padding: 14px 14px 14px 44px;
-  background: rgba(255,255,255,0.05);
-  border: 1.5px solid rgba(255,255,255,0.08);
+  background-color: #152540; /* sólido — no rgba, evita transparencia que parece blanca */
+  border: 1.5px solid rgba(255,255,255,0.1);
   border-radius: 10px;
   font-size: 15px;
   color: #fff;
   outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s;
   font-family: 'Inter', sans-serif;
   -webkit-appearance: none;
+  color-scheme: dark; /* evita que el browser aplique tema claro */
 }
 
 .lp-input::placeholder { color: rgba(148,186,255,0.2); }

@@ -318,6 +318,71 @@ tr:nth-child(even) {
 
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* ════════════════════════════════════════════════
+   RESPONSIVE — Nielsen #4: Consistencia y estándares
+   ════════════════════════════════════════════════ */
+
+/* Tablet (768–1024px) */
+@media (max-width: 1024px) {
+  .kpi-grid { grid-template-columns: repeat(3, 1fr); }
+  .charts-grid { grid-template-columns: 1fr; }
+  .content-area { padding: 1.5rem; }
+}
+
+/* Mobile (< 768px) */
+@media (max-width: 768px) {
+  /* La mobile top bar de App.tsx tiene 56px de altura */
+  .dashboard-layout { padding-top: 56px; }
+
+  /* Header compacto en mobile */
+  .top-header {
+    padding: 0 1rem;
+    height: 52px;
+  }
+  .header-title { font-size: 15px; }
+  .search-bar { display: none; }
+  .user-info { padding-left: 0.5rem; }
+
+  /* KPIs: 2 columnas */
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+  .kpi-card { padding: 1rem; }
+  .kpi-value { font-size: 26px; }
+
+  /* Gráficas: 1 columna */
+  .charts-grid { grid-template-columns: 1fr; gap: 1rem; }
+
+  /* Área de contenido */
+  .content-area { padding: 1rem; gap: 1.25rem; }
+
+  /* Tabla: scroll horizontal */
+  .table-section { overflow-x: auto; }
+  table { min-width: 600px; }
+  th, td { padding: 0.75rem 1rem; }
+
+  /* Footer */
+  .dashboard-footer {
+    flex-direction: column;
+    gap: 0.5rem;
+    text-align: center;
+    padding: 0.75rem 1rem;
+  }
+
+  /* FAB más pequeño */
+  .ai-fab { width: 48px; height: 48px; bottom: 1.5rem; right: 1.5rem; }
+}
+
+/* Mobile pequeño (< 480px) */
+@media (max-width: 480px) {
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
+  .kpi-value { font-size: 22px; }
+  .kpi-label { font-size: 10px; }
+  .chart-card { padding: 1rem; }
+  .chart-card h3 { font-size: 15px; }
+}
+
 .btn-ver {
   background: none;
   border: none;

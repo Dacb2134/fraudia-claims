@@ -128,8 +128,8 @@ export default function Login({ onLogin }: { onLogin: () => void }) {
                 <span className="material-symbols-outlined lp-input-icon">alternate_email</span>
                 <input
                   id="lp-email"
-                  type="text"
-                  autoComplete="username"
+                  type="email"
+                  autoComplete="off"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && handleSubmit()}
@@ -146,7 +146,7 @@ export default function Login({ onLogin }: { onLogin: () => void }) {
                 <input
                   id="lp-pass"
                   type={showPass ? 'text' : 'password'}
-                  autoComplete="current-password"
+                  autoComplete="off"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && handleSubmit()}
