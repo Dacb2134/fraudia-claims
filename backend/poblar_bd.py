@@ -19,7 +19,7 @@ if not DB_URL:
     raise ValueError("Falta DB_URL en .env")
 
 engine  = create_engine(DB_URL, pool_pre_ping=True)
-CSV_PATH = "/app/data/synthetic/siniestros_scored.csv"
+CSV_PATH = "/app/ai_data_core/data/synthetic/siniestros_scored.csv"
 
 MARCAS  = ["Toyota", "Chevrolet", "Hyundai", "Kia", "Mazda", "Nissan", "Ford"]
 MODELOS = {"Toyota": "Corolla", "Chevrolet": "Sail", "Hyundai": "Tucson",
