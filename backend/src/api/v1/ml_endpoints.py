@@ -57,8 +57,10 @@ def entrenar(db: Session = Depends(get_db)):
             "metricas": metricas,
             "fuente":   "MySQL",
         }
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error entrenando: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error entrenando [{type(e).__name__}]: {e}")
 
 
 @router.post("/predecir")
