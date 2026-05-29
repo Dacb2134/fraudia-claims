@@ -167,6 +167,8 @@ body {
   font-family: inherit;
   position: relative;
   z-index: 1;
+  .lp-input:not(:focus):not(:-webkit-autofill) {
+  background-color: #152540 !important;
 }
 
 .login-input::placeholder { color: rgba(148,186,255,0.25); }

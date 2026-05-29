@@ -155,9 +155,11 @@ def entrenar_modelo_desde_bd(db_session) -> dict:
             COALESCE(s.tiene_doc_inconsistente, 0)         AS tiene_doc_inconsistente,
             s.ramo, s.cobertura, s.estado, s.sucursal,
             COALESCE(sc.score_normalizado, 0)              AS score_riesgo,
+            COALESCE(p.suma_asegurada, 0)                  AS suma_asegurada,
             COALESCE(s.etiqueta_fraude_simulada, 0)        AS etiqueta_fraude_simulada
         FROM siniestros s
         LEFT JOIN scores_riesgo sc ON s.id_siniestro = sc.id_siniestro
+        LEFT JOIN polizas p        ON s.id_poliza    = p.id_poliza
     """)).mappings().all()
 
     df = pd.DataFrame([dict(r) for r in rows])
