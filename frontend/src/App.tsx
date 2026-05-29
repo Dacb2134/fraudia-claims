@@ -1,17 +1,23 @@
 import { useState } from 'react'
-import Login from './components/login/Login'
-import Dashboard from './components/dashboard/Dashboard'
-import Detalle from './components/detalle/Detalle'
-import { obtenerSesion, cerrarSesion } from './services/loginService'
+import Login from './views/Login/Login'
+import Dashboard from './views/Dashboard/Dashboard'
+import Detalle from './views/Detalle/Detalle'
+import { obtenerSesion, cerrarSesion } from './services/authService'
 
 type Vista = 'login' | 'dashboard' | 'detalle'
 
 function App() {
-  const [vista, setVista] = useState<Vista>(() =>
+  const [vista, setVista]           = useState<Vista>(() =>
     obtenerSesion() !== null ? 'dashboard' : 'login'
   )
+  const [siniestroId, setSiniestroId] = useState<string>('')
 
-  const handleLogout = () => {
+  function handleVerDetalle(id: string) {
+    setSiniestroId(id)
+    setVista('detalle')
+  }
+
+  function handleLogout() {
     cerrarSesion()
     setVista('login')
   }
@@ -20,11 +26,21 @@ function App() {
     return <Login onLogin={() => setVista('dashboard')} />
   }
 
-  if (vista === 'detalle') {
-    return <Detalle onVolver={() => setVista('dashboard')} />
+  if (vista === 'detalle' && siniestroId) {
+    return (
+      <Detalle
+        siniestroId={siniestroId}
+        onVolver={() => setVista('dashboard')}
+      />
+    )
   }
 
-  return <Dashboard onVerDetalle={() => setVista('detalle')} onLogout={handleLogout} />
+  return (
+    <Dashboard
+      onVerDetalle={handleVerDetalle}
+      onLogout={handleLogout}
+    />
+  )
 }
 
 export default App

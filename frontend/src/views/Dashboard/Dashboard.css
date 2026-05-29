@@ -1,0 +1,378 @@
+.dashboard-layout {
+  display: flex;
+  min-height: 100vh;
+  background: #f8f9ff;
+  font-family: 'Inter', sans-serif;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 256px;
+  background: #e6eeff;
+  padding: 2rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100vh;
+  z-index: 40;
+}
+
+.sidebar-logo h2 {
+  font-family: 'Hanken Grotesk', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: #002662;
+  margin: 0;
+}
+
+.sidebar-logo p {
+  font-size: 12px;
+  color: #434652;
+  margin: 0;
+  opacity: 0.7;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  text-decoration: none;
+  color: #434652;
+  font-size: 12px;
+  font-family: 'JetBrains Mono', monospace;
+  transition: background 0.2s;
+}
+
+.nav-link:hover {
+  background: #dee9fc;
+}
+
+.nav-link.active {
+  background: #dee9fc;
+  color: #002662;
+  font-weight: 700;
+}
+
+.ai-status {
+  margin-top: auto;
+  padding: 1rem;
+  background: rgba(0, 38, 98, 0.05);
+  border-radius: 0.75rem;
+  border: 1px solid rgba(0, 38, 98, 0.1);
+}
+
+/* Main content */
+.main-content {
+  flex: 1;
+  margin-left: 256px;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Header */
+.top-header {
+  background: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 2.5rem;
+  height: 64px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+
+.header-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #002662;
+  margin: 0;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  background: #e6eeff;
+  border-radius: 999px;
+  color: #434652;
+}
+
+.search-bar input {
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 14px;
+  width: 180px;
+}
+
+.icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 999px;
+  color: #002662;
+  position: relative;
+  transition: background 0.2s;
+}
+
+.icon-btn:hover {
+  background: #e6eeff;
+}
+
+.notif-dot {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  background: #ba1a1a;
+  border-radius: 50%;
+  border: 2px solid #fff;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-left: 1rem;
+  border-left: 1px solid #c4c6d3;
+}
+
+.user-info img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* Content area */
+.content-area {
+  padding: 2.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* KPI Cards */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1.5rem;
+}
+
+.kpi-card {
+  background: #fff;
+  padding: 1.5rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 20px rgba(0,58,143,0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  transition: transform 0.2s;
+}
+
+.kpi-card:hover {
+  transform: translateY(-2px);
+}
+
+.kpi-label {
+  font-size: 12px;
+  font-family: 'JetBrains Mono', monospace;
+  color: #434652;
+}
+
+.kpi-value {
+  font-family: 'Hanken Grotesk', sans-serif;
+  font-size: 36px;
+  font-weight: 700;
+  color: #002662;
+}
+
+.kpi-sub {
+  font-size: 12px;
+  color: #434652;
+}
+
+/* Charts */
+.charts-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 2rem;
+}
+
+.chart-card {
+  background: #fff;
+  padding: 1.5rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 20px rgba(0,58,143,0.05);
+}
+
+.chart-card h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #002662;
+  margin: 0 0 1rem 0;
+}
+
+/* Table */
+.table-section {
+  background: #fff;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 20px rgba(0,58,143,0.05);
+  overflow: hidden;
+}
+
+.table-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid #c4c6d3;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.table-header h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #002662;
+  margin: 0;
+}
+
+.table-header p {
+  font-size: 12px;
+  color: #434652;
+  margin: 0;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+thead {
+  background: #eff4ff;
+}
+
+th {
+  padding: 1rem 1.5rem;
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  color: #434652;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-align: left;
+  border-bottom: 1px solid #c4c6d3;
+}
+
+td {
+  padding: 1rem 1.5rem;
+  font-size: 14px;
+  color: #121c2a;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+tr:nth-child(even) {
+  background: rgba(0,38,98,0.02);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.badge-alto {
+  background: #ffdad6;
+  color: #93000a;
+}
+
+.badge-medio {
+  background: #dae2ff;
+  color: #003fa3;
+}
+
+.badge-bajo {
+  background: #d6f5e3;
+  color: #005c28;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.btn-ver {
+  background: none;
+  border: none;
+  color: #002662;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.btn-ver:hover {
+  text-decoration: underline;
+}
+
+/* Footer */
+.dashboard-footer {
+  margin-top: auto;
+  padding: 1rem 2.5rem;
+  background: #d0dbed;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: #434652;
+}
+
+.dashboard-footer a {
+  color: #434652;
+  text-decoration: none;
+  margin-left: 1.5rem;
+}
+
+.dashboard-footer a:hover {
+  color: #002662;
+}
+
+/* Floating AI button */
+.ai-fab {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: 56px;
+  height: 56px;
+  background: #002662;
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(0,38,98,0.3);
+  z-index: 60;
+  transition: box-shadow 0.2s;
+}
+
+.ai-fab:hover {
+  box-shadow: 0 0 15px rgba(0,83,207,0.5);
+}
