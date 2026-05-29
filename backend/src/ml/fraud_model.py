@@ -143,26 +143,35 @@ def entrenar_modelo_desde_bd(db_session) -> dict:
     Funciona en Railway y cualquier entorno sin archivos CSV.
     """
     from sqlalchemy import text as sql_text
-    print("🤖 Cargando datos desde la base de datos MySQL...")
-    rows = db_session.execute(sql_text("""
-        SELECT
-            s.monto_reclamado,
-            s.monto_estimado,
-            COALESCE(s.dias_desde_inicio_poliza, 0)        AS dias_desde_inicio_poliza,
-            COALESCE(s.dias_desde_fin_poliza, 0)           AS dias_desde_fin_poliza,
-            COALESCE(s.dias_entre_ocurrencia_reporte, 0)   AS dias_entre_ocurrencia_reporte,
-            COALESCE(s.historial_siniestros_asegurado, 0)  AS historial_siniestros_asegurado,
-            COALESCE(s.tiene_doc_inconsistente, 0)         AS tiene_doc_inconsistente,
-            s.ramo, s.cobertura, s.estado, s.sucursal,
-            COALESCE(sc.score_normalizado, 0)              AS score_riesgo,
-            COALESCE(p.suma_asegurada, 0)                  AS suma_asegurada,
-            COALESCE(s.etiqueta_fraude_simulada, 0)        AS etiqueta_fraude_simulada
-        FROM siniestros s
-        LEFT JOIN scores_riesgo sc ON s.id_siniestro = sc.id_siniestro
-        LEFT JOIN polizas p        ON s.id_poliza    = p.id_poliza
-    """)).mappings().all()
+    print("🤖 [entrenar_modelo_desde_bd] Iniciando consulta a MySQL...")
+    try:
+        rows = db_session.execute(sql_text("""
+            SELECT
+                s.monto_reclamado,
+                s.monto_estimado,
+                COALESCE(s.dias_desde_inicio_poliza, 0)        AS dias_desde_inicio_poliza,
+                COALESCE(s.dias_desde_fin_poliza, 0)           AS dias_desde_fin_poliza,
+                COALESCE(s.dias_entre_ocurrencia_reporte, 0)   AS dias_entre_ocurrencia_reporte,
+                COALESCE(s.historial_siniestros_asegurado, 0)  AS historial_siniestros_asegurado,
+                COALESCE(s.tiene_doc_inconsistente, 0)         AS tiene_doc_inconsistente,
+                s.ramo, s.cobertura, s.estado, s.sucursal,
+                COALESCE(sc.score_normalizado, 0)              AS score_riesgo,
+                COALESCE(p.suma_asegurada, 0)                  AS suma_asegurada,
+                COALESCE(s.etiqueta_fraude_simulada, 0)        AS etiqueta_fraude_simulada
+            FROM siniestros s
+            LEFT JOIN scores_riesgo sc ON s.id_siniestro = sc.id_siniestro
+            LEFT JOIN polizas p        ON s.id_poliza    = p.id_poliza
+        """)).mappings().all()
+        print(f"✅ [entrenar_modelo_desde_bd] Consulta OK — {len(rows)} filas obtenidas")
+    except Exception as sql_err:
+        import traceback
+        print(f"❌ [entrenar_modelo_desde_bd] ERROR en SQL: {type(sql_err).__name__}: {sql_err}")
+        print(traceback.format_exc())
+        raise
 
     df = pd.DataFrame([dict(r) for r in rows])
+    print(f"📊 [entrenar_modelo_desde_bd] Columnas del DataFrame: {list(df.columns)}")
+    print(f"📊 [entrenar_modelo_desde_bd] Fraudes en dataset: {int(df['etiqueta_fraude_simulada'].sum())} / {len(df)}")
     if len(df) < 20:
         raise ValueError(f"Solo {len(df)} registros en BD. Se necesitan ≥20 para entrenar.")
     return _entrenar_con_df(df)

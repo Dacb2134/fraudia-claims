@@ -3,6 +3,8 @@ GET  /api/v1/ml/estado      — estado y métricas del modelo
 POST /api/v1/ml/entrenar    — entrenar/reentrenar el modelo
 POST /api/v1/ml/predecir    — predecir probabilidad de fraude
 """
+import logging
+import traceback
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import text
@@ -11,6 +13,7 @@ from src.core.database import get_db
 from src.ml.fraud_model import (entrenar_modelo_desde_bd, predecir_probabilidad,
                                  MODEL_PATH, MODELO_NOMBRE)
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
@@ -50,8 +53,10 @@ def entrenar(db: Session = Depends(get_db)):
     Entrena o reentrena el modelo.
     Usa datos de la base de datos MySQL (funciona en Railway sin CSV).
     """
+    logger.info("▶ POST /ml/entrenar — inicio")
     try:
         metricas = entrenar_modelo_desde_bd(db)
+        logger.info("✅ Entrenamiento completado: %s", metricas)
         return {
             "mensaje":  "✅ Modelo entrenado correctamente desde la base de datos",
             "metricas": metricas,
@@ -60,7 +65,12 @@ def entrenar(db: Session = Depends(get_db)):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error entrenando [{type(e).__name__}]: {e}")
+        tb = traceback.format_exc()
+        logger.error("❌ Error entrenando [%s]: %s\n%s", type(e).__name__, e, tb)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error entrenando [{type(e).__name__}]: {e}",
+        )
 
 
 @router.post("/predecir")

@@ -1,4 +1,6 @@
 import os
+import logging
+logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from src.api.v1 import siniestros, chat, stats, ml_endpoints, nlp_endpoints, extra_endpoints, auth
