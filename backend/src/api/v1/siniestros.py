@@ -1,12 +1,14 @@
 """
-GET /api/v1/siniestros         — lista priorizada con filtros
-GET /api/v1/siniestros/{id}    — detalle de un siniestro
+GET  /api/v1/siniestros                   — lista priorizada con filtros
+GET  /api/v1/siniestros/{id}              — detalle de un siniestro
+POST /api/v1/siniestros/{id}/recalcular   — recalcula score en tiempo real
 """
 from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from typing import Optional
 from src.core.database import get_db
+from src.engine.risk_scorer import calcular_score_hibrido
 
 router = APIRouter()
 
@@ -181,4 +183,66 @@ def get_siniestro_detalle(
             "reglas_criticas":   row["reglas_criticas"] or [],
             "calculado_en":      str(row["calculado_en"]) if row["calculado_en"] else None,
         },
+    }
+
+
+@router.post("/{id_siniestro}/recalcular")
+def recalcular_score(id_siniestro: str, db: Session = Depends(get_db)):
+    """
+    Recalcula el score de riesgo en tiempo real aplicando el motor de reglas.
+    Útil para la demo: muestra explicación detallada de cada señal activada.
+    """
+    row = db.execute(text("""
+        SELECT
+            s.*,
+            p.suma_asegurada,
+            p.fecha_inicio AS poliza_inicio,
+            p.fecha_fin    AS poliza_fin,
+            pr.en_lista_restrictiva,
+            pr.pct_casos_observados
+        FROM siniestros s
+        LEFT JOIN polizas p     ON s.id_poliza = p.id_poliza
+        LEFT JOIN proveedores pr ON s.id_proveedor_beneficiario = pr.id_proveedor
+        WHERE s.id_siniestro = :id
+    """), {"id": id_siniestro}).mappings().first()
+
+    if not row:
+        raise HTTPException(status_code=404, detail=f"Siniestro {id_siniestro} no encontrado")
+
+    siniestro_data = dict(row)
+    proveedor_data = {
+        "en_lista_restrictiva": row["en_lista_restrictiva"],
+        "pct_casos_observados": row["pct_casos_observados"],
+    }
+
+    resultado = calcular_score_hibrido(siniestro=siniestro_data, proveedor=proveedor_data)
+
+    # Persistir el score recalculado
+    try:
+        db.execute(text("""
+            UPDATE scores_riesgo
+            SET score_normalizado = :score,
+                nivel_riesgo      = :nivel,
+                alertas_activadas = :alertas,
+                calculado_en      = NOW()
+            WHERE id_siniestro = :id
+        """), {
+            "score":   resultado["score_normalizado"],
+            "nivel":   resultado["nivel_riesgo"],
+            "alertas": resultado["alertas_activadas"],
+            "id":      id_siniestro,
+        })
+        db.commit()
+    except Exception:
+        db.rollback()
+
+    return {
+        "id_siniestro":      id_siniestro,
+        "score_normalizado": resultado["score_normalizado"],
+        "nivel_riesgo":      resultado["nivel_riesgo"],
+        "alertas_activadas": resultado["alertas_activadas"],
+        "reglas_criticas":   resultado["reglas_criticas"],
+        "total_alertas":     resultado["total_alertas"],
+        "modo":              resultado["modo"],
+        "detalle_senales":   [a for a in resultado["alertas_activadas"].split(" | ") if a],
     }
