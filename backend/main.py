@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from src.api.v1 import siniestros, chat, stats, ml_endpoints, nlp_endpoints, extra_endpoints
+from src.api.v1 import siniestros, chat, stats, ml_endpoints, nlp_endpoints, extra_endpoints, auth
 
 app = FastAPI(
     title="ReasonScore AI — Detector de Fraudes",
@@ -10,13 +10,13 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://frontend:5173"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# ── Routers ───────────────────────────────────────────────────────────────────
+app.include_router(auth.router,                    prefix="/api/v1/auth",       tags=["Autenticación"])
 app.include_router(siniestros.router,              prefix="/api/v1/siniestros", tags=["Siniestros"])
 app.include_router(chat.router,                    prefix="/api/v1/chat",       tags=["Agente IA"])
 app.include_router(stats.router,                   prefix="/api/v1/stats",      tags=["Estadísticas"])

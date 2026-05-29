@@ -1,7 +1,7 @@
 """
 poblar_bd.py
 Carga el CSV sintético a MySQL y genera datos sintéticos
-para tablas complementarias (vehiculos, documentos).
+para tablas complementarias (vehiculos, documentos, usuarios).
 Ejecutar: docker-compose exec api python poblar_bd.py
 """
 import os
@@ -18,10 +18,9 @@ DB_URL = os.getenv("DB_URL")
 if not DB_URL:
     raise ValueError("Falta DB_URL en .env")
 
-engine = create_engine(DB_URL, pool_pre_ping=True)
+engine  = create_engine(DB_URL, pool_pre_ping=True)
 CSV_PATH = "/app/ai_data_core/data/synthetic/siniestros_scored.csv"
 
-# ── Datos sintéticos para vehículos ──────────────────────────────────────────
 MARCAS  = ["Toyota", "Chevrolet", "Hyundai", "Kia", "Mazda", "Nissan", "Ford"]
 MODELOS = {"Toyota": "Corolla", "Chevrolet": "Sail", "Hyundai": "Tucson",
            "Kia": "Sportage", "Mazda": "CX-5", "Nissan": "Sentra", "Ford": "Escape"}
@@ -34,14 +33,19 @@ def gen_chasis():
     chars = "ABCDEFGHJKLMNPRSTUVWXYZ0123456789"
     return "".join(random.choices(chars, k=17))
 
-# ── Tipos de documentos por ramo ──────────────────────────────────────────────
 DOCS_POR_RAMO = {
-    "Vehículos": ["Denuncia Policial", "Informe Perito", "Fotos Daño", "Parte Policial"],
+    "Vehiculos": ["Denuncia Policial", "Informe Perito", "Fotos Daño", "Parte Policial"],
     "Salud":     ["Cédula Asegurado", "Informe Perito", "Fotos Daño"],
     "Hogar":     ["Denuncia Policial", "Fotos Daño", "Informe Perito"],
     "Vida":      ["Cédula Asegurado", "Informe Perito"],
     "Generales": ["Denuncia Policial", "Fotos Daño", "Informe Perito"],
 }
+
+USUARIOS_DEMO = [
+    {"nombre": "Admin FraudIA",   "email": "admin@fraudia.com",      "password": "admin123",      "rol": "admin"},
+    {"nombre": "Analista Demo",   "email": "analista@fraudia.com",   "password": "analista123",   "rol": "analista"},
+    {"nombre": "Supervisor Demo", "email": "supervisor@fraudia.com", "password": "supervisor123", "rol": "supervisor"},
+]
 
 def poblar():
     df = pd.read_csv(CSV_PATH)
@@ -50,7 +54,6 @@ def poblar():
     with engine.begin() as conn:
         conn.execute(text("SET FOREIGN_KEY_CHECKS=0;"))
 
-        # Limpiar tablas en orden correcto
         for tabla in ["log_consultas_agente", "alertas", "scores_riesgo",
                       "documentos", "vehiculos", "siniestros",
                       "polizas", "asegurados", "proveedores", "usuarios"]:
@@ -67,7 +70,7 @@ def poblar():
         proveedores["reclamos_asociados"]       = 0
         proveedores["monto_promedio_reclamado"] = 0.0
         proveedores["pct_casos_observados"]     = 0.0
-        proveedores["antiguedad_anios"] = [random.randint(1, 15) for _ in range(len(proveedores))]
+        proveedores["antiguedad_anios"]         = [random.randint(1, 15) for _ in range(len(proveedores))]
         proveedores["en_lista_restrictiva"]     = 0
         proveedores.to_sql("proveedores", con=conn, if_exists="append", index=False)
         print(f"  ✅ Proveedores: {len(proveedores)}")
@@ -93,7 +96,6 @@ def poblar():
             .drop_duplicates(subset=["id_poliza"])
             .copy()
         )
-        # Limpiar tildes en ramo para evitar el error de encoding
         polizas["ramo"]          = polizas["ramo"].str.replace("Vehículos", "Vehiculos")
         polizas["fecha_inicio"]  = "2022-01-01"
         polizas["fecha_fin"]     = "2026-12-31"
@@ -105,7 +107,7 @@ def poblar():
         polizas.to_sql("polizas", con=conn, if_exists="append", index=False)
         print(f"  ✅ Pólizas: {len(polizas)}")
 
-        # ── 4. Vehículos (sintéticos para pólizas de ramo Vehiculos) ─────────
+        # ── 4. Vehículos ──────────────────────────────────────────────────────
         polizas_vehiculos = polizas[polizas["ramo"] == "Vehiculos"]["id_poliza"].tolist()
         vehiculos_rows = []
         for pid in polizas_vehiculos:
@@ -120,9 +122,8 @@ def poblar():
                 "anio":      random.randint(2010, 2024),
             })
         if vehiculos_rows:
-            df_veh = pd.DataFrame(vehiculos_rows)
-            df_veh.to_sql("vehiculos", con=conn, if_exists="append", index=False)
-            print(f"  ✅ Vehículos: {len(df_veh)}")
+            pd.DataFrame(vehiculos_rows).to_sql("vehiculos", con=conn, if_exists="append", index=False)
+        print(f"  ✅ Vehículos: {len(vehiculos_rows)}")
 
         # ── 5. Siniestros ─────────────────────────────────────────────────────
         cols_sin = [
@@ -144,7 +145,7 @@ def poblar():
         siniestros.to_sql("siniestros", con=conn, if_exists="append", index=False)
         print(f"  ✅ Siniestros: {len(siniestros)}")
 
-        # ── 6. Documentos (sintéticos basados en cada siniestro) ──────────────
+        # ── 6. Documentos ─────────────────────────────────────────────────────
         doc_rows = []
         doc_id   = 1
         for _, row in df.iterrows():
@@ -152,24 +153,18 @@ def poblar():
             tipos       = DOCS_POR_RAMO.get(ramo_clean, ["Fotos Daño", "Informe Perito"])
             es_fraude   = int(row["etiqueta_fraude_simulada"]) == 1
             tiene_incon = str(row["tiene_doc_inconsistente"]) in ["True", "1", "true"]
-
             for tipo in tipos:
-                entregado     = 1 if not (es_fraude and random.random() < 0.4) else 0
-                legible       = 1 if not (es_fraude and random.random() < 0.3) else 0
-                inconsistente = 1 if (tiene_incon and random.random() < 0.5) else 0
-
                 doc_rows.append({
                     "id_documento":            f"DOC-{doc_id:06d}",
                     "id_siniestro":            row["id_siniestro"],
                     "tipo_documento":          tipo,
-                    "entregado":               entregado,
-                    "legible":                 legible,
+                    "entregado":               1 if not (es_fraude and random.random() < 0.4) else 0,
+                    "legible":                 1 if not (es_fraude and random.random() < 0.3) else 0,
                     "fecha_emision":           row["fecha_ocurrencia"],
-                    "inconsistencia_detectada": inconsistente,
-                    "observacion":             "Fecha previa al evento" if inconsistente else "",
+                    "inconsistencia_detectada": 1 if (tiene_incon and random.random() < 0.5) else 0,
+                    "observacion":             "",
                 })
                 doc_id += 1
-
         df_docs = pd.DataFrame(doc_rows)
         df_docs.to_sql("documentos", con=conn, if_exists="append", index=False)
         print(f"  ✅ Documentos: {len(df_docs)}")
@@ -189,14 +184,22 @@ def poblar():
         def safe_json(val):
             try:
                 import json
-                parsed = ast.literal_eval(str(val))
-                return json.dumps(parsed)
+                return json.dumps(ast.literal_eval(str(val)))
             except Exception:
                 return "[]"
 
         scores["reglas_criticas"] = scores["reglas_criticas"].apply(safe_json)
         scores.to_sql("scores_riesgo", con=conn, if_exists="append", index=False)
         print(f"  ✅ Scores: {len(scores)}")
+
+        # ── 8. Usuarios de prueba ─────────────────────────────────────────────
+        for u in USUARIOS_DEMO:
+            conn.execute(text("""
+                INSERT IGNORE INTO usuarios (nombre, email, password_plain, rol)
+                VALUES (:nombre, :email, :password, :rol)
+            """), {"nombre": u["nombre"], "email": u["email"],
+                   "password": u["password"], "rol": u["rol"]})
+        print(f"  ✅ Usuarios: {len(USUARIOS_DEMO)}")
 
         conn.execute(text("SET FOREIGN_KEY_CHECKS=1;"))
 
@@ -205,10 +208,15 @@ def poblar():
     print(f"   Proveedores : {len(proveedores)}")
     print(f"   Asegurados  : {len(asegurados)}")
     print(f"   Pólizas     : {len(polizas)}")
-    print(f"   Vehículos   : {len(vehiculos_rows) if vehiculos_rows else 0}")
+    print(f"   Vehículos   : {len(vehiculos_rows)}")
     print(f"   Siniestros  : {len(siniestros)}")
     print(f"   Documentos  : {len(df_docs)}")
     print(f"   Scores      : {len(scores)}")
+    print(f"   Usuarios    : {len(USUARIOS_DEMO)}")
+    print("\n👤 Usuarios para la demo:")
+    print("─" * 40)
+    for u in USUARIOS_DEMO:
+        print(f"  {u['rol']:12} | {u['email']:30} | {u['password']}")
 
 if __name__ == "__main__":
     poblar()

@@ -10,8 +10,8 @@ CREATE TABLE IF NOT EXISTS usuarios (
     id             INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     nombre         VARCHAR(100)  NOT NULL,
     email          VARCHAR(150)  NOT NULL UNIQUE,
-    password_hash  VARCHAR(255)  NOT NULL,
-    rol            ENUM('analista','antifraude','jefatura','admin') NOT NULL DEFAULT 'analista',
+    password_plain VARCHAR(100)  NOT NULL,
+    rol            ENUM('admin','analista','supervisor') NOT NULL DEFAULT 'analista',
     activo         TINYINT(1)    NOT NULL DEFAULT 1,
     creado_en      DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
     actualizado_en DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -192,6 +192,7 @@ LEFT JOIN proveedores pr ON s.id_proveedor_beneficiario = pr.id_proveedor
 LEFT JOIN scores_riesgo sc ON s.id_siniestro = sc.id_siniestro
 ORDER BY sc.score_normalizado DESC;
 
-INSERT IGNORE INTO usuarios (nombre, email, password_hash, rol)
-VALUES ('Admin FraudIA', 'admin@fraudia.com',
-        '$2b$12$placeholder_cambiar_en_produccion', 'admin');
+INSERT IGNORE INTO usuarios (nombre, email, password_plain, rol) VALUES
+('Admin FraudIA',   'admin@fraudia.com',      'admin123',      'admin'),
+('Analista Demo',   'analista@fraudia.com',   'analista123',   'analista'),
+('Supervisor Demo', 'supervisor@fraudia.com', 'supervisor123', 'supervisor');
