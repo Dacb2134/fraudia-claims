@@ -3,7 +3,7 @@ import logging
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from src.api.v1 import siniestros, chat, stats, ml_endpoints, nlp_endpoints, extra_endpoints, auth
+from src.api.v1 import siniestros, chat, stats, ml_endpoints, nlp_endpoints, extra_endpoints, auth, admin_endpoints
 
 app = FastAPI(
     title="ReasonScore AI — Detector de Fraudes",
@@ -28,8 +28,9 @@ app.include_router(chat.router,                    prefix="/api/v1/chat",       
 app.include_router(stats.router,                   prefix="/api/v1/stats",      tags=["Estadísticas"])
 app.include_router(ml_endpoints.router,            prefix="/api/v1/ml",         tags=["Modelo ML"])
 app.include_router(nlp_endpoints.router,           prefix="/api/v1/nlp",        tags=["NLP"])
-app.include_router(extra_endpoints.router_red,     prefix="/api/v1/red",        tags=["Red de Relaciones"])
-app.include_router(extra_endpoints.router_reporte, prefix="/api/v1/reporte",    tags=["Reportes"])
+app.include_router(extra_endpoints.router_red,      prefix="/api/v1/red",        tags=["Red de Relaciones"])
+app.include_router(extra_endpoints.router_reporte,  prefix="/api/v1/reporte",    tags=["Reportes"])
+app.include_router(admin_endpoints.router_admin,    prefix="/api/v1/admin",      tags=["Admin Demo"])
 
 @app.get("/", tags=["Health"])
 def root():

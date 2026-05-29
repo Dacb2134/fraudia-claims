@@ -99,7 +99,7 @@ def get_stats(db: Session = Depends(get_db)):
         "resumen": {
             "total_siniestros":   total_siniestros,
             "score_promedio":     float(score_promedio),
-            "monto_total_riesgo": sum(montos.values()),
+            "monto_total_riesgo": montos["ROJO"] + montos["AMARILLO"],  # solo niveles de alerta
         },
         "semaforo": {
             "verde":    {"total": semaforo["VERDE"],    "monto": montos["VERDE"]},

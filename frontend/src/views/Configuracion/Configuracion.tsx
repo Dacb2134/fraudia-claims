@@ -10,9 +10,11 @@ interface ModeloEstado {
 }
 
 export default function Configuracion({ onNav, onLogout }: NavProps) {
-  const [modelo,  setModelo]  = useState<ModeloEstado | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [entrenar, setEntrenar] = useState<'idle' | 'loading' | 'ok' | 'error'>('idle')
+  const [modelo,    setModelo]    = useState<ModeloEstado | null>(null)
+  const [loading,   setLoading]   = useState(true)
+  const [entrenar,  setEntrenar]  = useState<'idle' | 'loading' | 'ok' | 'error'>('idle')
+  const [seedRojo,  setSeedRojo]  = useState<'idle' | 'loading' | 'ok' | 'error'>('idle')
+  const [seedInfo,  setSeedInfo]  = useState<string | null>(null)
 
   useEffect(() => {
     apiFetch<ModeloEstado>('/api/v1/ml/estado')
@@ -20,6 +22,22 @@ export default function Configuracion({ onNav, onLogout }: NavProps) {
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [])
+
+  async function handleSeedRojo() {
+    setSeedRojo('loading')
+    setSeedInfo(null)
+    try {
+      const res = await apiFetch<{ mensaje: string; casos: { id: string; nivel: string }[] }>(
+        '/api/v1/admin/seed-casos-rojo', { method: 'POST' }
+      )
+      const rojos = res.casos.filter(c => c.nivel === 'ROJO').length
+      setSeedInfo(`${res.casos.length} casos actualizados · ${rojos} llegaron a ROJO`)
+      setSeedRojo('ok')
+    } catch (e: unknown) {
+      setSeedInfo(e instanceof Error ? e.message : 'Error desconocido')
+      setSeedRojo('error')
+    }
+  }
 
   async function handleEntrenar() {
     setEntrenar('loading')
@@ -126,6 +144,49 @@ export default function Configuracion({ onNav, onLogout }: NavProps) {
                       <span className="font-medium text-on-surface text-right">{value}</span>
                     </div>
                   ))}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Herramientas de Demo */}
+          <section>
+            <h3 className="font-headline-lg text-headline-lg text-primary mb-4">Herramientas de Demo</h3>
+            <div className="bg-white rounded-xl border border-outline-variant/30 shadow-sm p-6">
+              <div className="flex items-start gap-4">
+                <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(186,26,26,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <span className="material-symbols-outlined" style={{ color: '#ba1a1a', fontSize: 24 }}>crisis_alert</span>
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-medium text-on-surface mb-1">Activar 8 Casos ROJO para Demo</h4>
+                  <p className="text-sm text-on-surface-variant mb-4">
+                    Actualiza los primeros 8 siniestros con condiciones que disparan RF-01 (Pérdida Total por Robo)
+                    y los llevan a nivel ROJO (score ≥ 81). Útil para mostrar al jurado que el semáforo
+                    detecta casos críticos. Solo ejecutar una vez.
+                  </p>
+                  <div className="flex items-center gap-4 flex-wrap">
+                    <button
+                      onClick={handleSeedRojo}
+                      disabled={seedRojo === 'loading' || seedRojo === 'ok'}
+                      style={{
+                        padding: '10px 20px', borderRadius: 10, cursor: seedRojo === 'ok' ? 'default' : 'pointer',
+                        fontSize: 14, fontWeight: 600, border: '1.5px solid #ba1a1a',
+                        background: seedRojo === 'ok' ? 'rgba(0,163,68,0.1)' : 'rgba(186,26,26,0.05)',
+                        color: seedRojo === 'ok' ? '#00A344' : '#ba1a1a',
+                        display: 'flex', alignItems: 'center', gap: 6, opacity: seedRojo === 'loading' ? 0.6 : 1,
+                      }}>
+                      <span className="material-symbols-outlined" style={{ fontSize: 18,
+                        animation: seedRojo === 'loading' ? 'spin 1s linear infinite' : 'none' }}>
+                        {seedRojo === 'ok' ? 'check_circle' : seedRojo === 'error' ? 'error' : seedRojo === 'loading' ? 'sync' : 'bolt'}
+                      </span>
+                      {seedRojo === 'loading' ? 'Actualizando…' : seedRojo === 'ok' ? 'Casos activados' : seedRojo === 'error' ? 'Error' : 'Activar Casos ROJO'}
+                    </button>
+                    {seedInfo && (
+                      <span style={{ fontSize: 12, color: seedRojo === 'ok' ? '#00A344' : '#ba1a1a', fontFamily: 'JetBrains Mono' }}>
+                        {seedInfo}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

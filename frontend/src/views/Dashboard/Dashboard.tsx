@@ -34,6 +34,11 @@ export default function Dashboard({
   const pctAma   = total ? ((stats?.semaforo.amarillo.total ?? 0) / total * 100).toFixed(1) : '0'
   const pctVerde = total ? ((stats?.semaforo.verde.total   ?? 0) / total * 100).toFixed(1) : '0'
 
+  // Monto en riesgo real (solo ROJO + AMARILLO, no VERDE)
+  const montoEnRiesgo   = (stats?.semaforo.rojo.monto ?? 0) + (stats?.semaforo.amarillo.monto ?? 0)
+  // Ahorro potencial: 35% del monto en riesgo detectado por IA
+  const ahorroSimulado  = montoEnRiesgo * 0.35
+
   // Donut SVG
   const circumference = 2 * Math.PI * 70
   const rojoOffset    = circumference * (1 - (stats?.semaforo.rojo.total    ?? 0) / (total || 1))
@@ -202,14 +207,17 @@ export default function Dashboard({
 
                 <div className="kpi-card" style={{ background: '#003a8f' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span className="kpi-label" style={{ color: '#86a9ff' }}>Monto en Riesgo</span>
+                    <span className="kpi-label" style={{ color: '#86a9ff' }}>Monto en Alerta</span>
                     <span className="material-symbols-outlined" style={{ color: '#86a9ff' }}>savings</span>
                   </div>
                   <span className="kpi-value" style={{ color: '#fff' }}>
-                    {formatMonto(stats?.resumen.monto_total_riesgo ?? 0)}
+                    {formatMonto(montoEnRiesgo)}
                   </span>
-                  <span style={{ fontSize: 12, color: '#86a9ff', background: 'rgba(255,255,255,0.1)', padding: '2px 8px', borderRadius: 4, display: 'inline-block' }}>
-                    Prevención IA
+                  <span style={{ fontSize: 11, color: '#b9c9ed', display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <span>ROJO + AMARILLO</span>
+                    <span style={{ color: '#4ade80', fontWeight: 700 }}>
+                      Ahorro potencial: ~{formatMonto(ahorroSimulado)}
+                    </span>
                   </span>
                 </div>
               </section>
