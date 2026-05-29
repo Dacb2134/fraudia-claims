@@ -339,6 +339,15 @@ export default function Detalle({
                     Consultar Agente IA
                   </button>
                   <button className="btn-outline" onClick={onVolver}>Volver al Dashboard</button>
+                  <button
+                    onClick={() => document.getElementById('docs-expediente')?.scrollIntoView({ behavior: 'smooth' })}
+                    style={{ padding: '10px 20px', borderRadius: 10, cursor: 'pointer', fontSize: 14, fontWeight: 600, border: '1.5px solid #0053cf', background: 'rgba(0,83,207,0.05)', color: '#0053cf', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: 16 }}>folder_open</span>
+                    Documentos
+                    {docsExpediente.length > 0 && (
+                      <span style={{ background: '#0053cf', color: '#fff', borderRadius: 99, fontSize: 11, padding: '1px 6px', fontWeight: 700 }}>{docsExpediente.length}</span>
+                    )}
+                  </button>
                   {!auditConfirmada ? (
                     <button
                       onClick={() => setAuditoria(true)}
@@ -588,16 +597,21 @@ export default function Detalle({
           </div>
 
           {/* ── Documentos del Expediente ── */}
-          <div className="section-card" style={{ marginTop: '1.5rem' }}>
+          <div id="docs-expediente" style={{ background: '#fff', borderRadius: '0.5rem', padding: '1.5rem', border: '2px solid #e6eeff', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', marginTop: '1.5rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <h2 style={{ margin: 0 }}>
-                <span className="material-symbols-outlined" style={{ color: '#002662' }}>folder_open</span>
+              <h2 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8, fontSize: 18, color: '#002662' }}>
+                <span style={{ background: '#e6eeff', borderRadius: 8, padding: '4px 6px', display: 'flex' }}>
+                  <span className="material-symbols-outlined" style={{ color: '#002662', fontSize: 22 }}>folder_open</span>
+                </span>
                 Documentos del Expediente
               </h2>
-              <span style={{ fontSize: 11, color: '#747783', fontFamily: 'JetBrains Mono' }}>
-                {docsExpediente.length} documento{docsExpediente.length !== 1 ? 's' : ''} disponible{docsExpediente.length !== 1 ? 's' : ''}
+              <span style={{ fontSize: 11, color: '#747783', fontFamily: 'JetBrains Mono', background: '#f0f2fa', padding: '3px 10px', borderRadius: 99 }}>
+                {docsExpediente.length} doc{docsExpediente.length !== 1 ? 's' : ''} disponible{docsExpediente.length !== 1 ? 's' : ''}
               </span>
             </div>
+            <p style={{ fontSize: 12, color: '#747783', margin: '0 0 1rem', lineHeight: 1.5 }}>
+              La IA analiza cada documento y detecta inconsistencias con los datos del siniestro (fechas, montos, partes involucradas).
+            </p>
 
             {/* Lista de documentos existentes */}
             {docsExpediente.length === 0 ? (
@@ -642,28 +656,35 @@ export default function Detalle({
             )}
 
             {/* Subir nuevo documento */}
-            <div style={{ borderTop: '1px solid #e0e2f0', paddingTop: '1rem' }}>
-              <p style={{ fontSize: 12, fontWeight: 700, color: '#434652', margin: '0 0 8px' }}>Registrar nuevo documento</p>
+            <div style={{ borderTop: '1px dashed #c4c6d3', paddingTop: '1rem', marginTop: docsExpediente.length > 0 ? '1rem' : 0 }}>
+              <p style={{ fontSize: 13, fontWeight: 700, color: '#002662', margin: '0 0 10px', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 17 }}>upload_file</span>
+                Subir documento del expediente físico
+              </p>
+              <p style={{ fontSize: 11, color: '#747783', margin: '0 0 12px' }}>
+                Selecciona el tipo de documento y sube el PDF. El sistema lo guarda y puedes analizarlo con IA.
+              </p>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
                 <select value={docUploadTipo} onChange={e => setDocUploadTipo(e.target.value)}
-                  style={{ border: '1px solid #c4c6d3', borderRadius: 8, padding: '7px 10px', fontSize: 13, color: '#121c2a', background: '#fff' }}>
-                  <option value="factura">Factura</option>
-                  <option value="declaracion_accidente">Declaración de Accidente</option>
-                  <option value="parte_policial">Parte Policial</option>
+                  style={{ border: '1.5px solid #c4c6d3', borderRadius: 8, padding: '9px 12px', fontSize: 13, color: '#121c2a', background: '#fff', fontWeight: 600 }}>
+                  <option value="factura">🧾 Factura del taller / proveedor</option>
+                  <option value="declaracion_accidente">📄 Declaración de Accidente</option>
+                  <option value="parte_policial">🚔 Parte Policial</option>
                 </select>
-                <label style={{ padding: '7px 14px', background: '#e6eeff', color: '#002662', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5 }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>upload_file</span>
-                  Seleccionar PDF
+                <label style={{ padding: '9px 18px', background: '#002662', color: '#fff', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6, boxShadow: '0 2px 8px rgba(0,38,98,0.2)' }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: 17 }}>upload</span>
+                  {docSubiendo ? 'Subiendo…' : 'Seleccionar PDF'}
                   <input ref={fileDocRef} type="file" accept=".pdf" style={{ display: 'none' }}
                     onChange={e => { const f = e.target.files?.[0]; if (f) handleSubirDoc(f) }} />
                 </label>
-                {docSubiendo && <span style={{ fontSize: 12, color: '#747783' }}>Subiendo…</span>}
-                {docUploadMsg && (
-                  <span style={{ fontSize: 12, color: docUploadMsg.startsWith('Error') ? '#ba1a1a' : '#00A344', fontFamily: 'JetBrains Mono' }}>
-                    {docUploadMsg}
-                  </span>
-                )}
               </div>
+              {docUploadMsg && (
+                <div style={{ marginTop: 10, padding: '8px 14px', borderRadius: 8, fontSize: 12, fontFamily: 'JetBrains Mono',
+                  background: docUploadMsg.startsWith('Error') ? '#ffdad6' : '#d6f5e3',
+                  color: docUploadMsg.startsWith('Error') ? '#ba1a1a' : '#005c28' }}>
+                  {docUploadMsg}
+                </div>
+              )}
             </div>
           </div>
 
