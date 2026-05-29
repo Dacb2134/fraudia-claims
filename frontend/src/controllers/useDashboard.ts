@@ -13,7 +13,7 @@ export function useDashboard() {
   useEffect(() => {
     setLoading(true)
     setError(null)
-    Promise.all([fetchStats(), fetchSiniestros(filtro)])
+    Promise.all([fetchStats(), fetchSiniestros(filtro, 500)])
       .then(([s, c]) => { setStats(s); setCasos(c) })
       .catch((e: unknown) => setError(e instanceof Error ? e.message : 'Error de carga'))
       .finally(() => setLoading(false))

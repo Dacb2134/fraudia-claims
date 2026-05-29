@@ -51,6 +51,9 @@ export default function Dashboard({
         c.sucursal?.toLowerCase().includes(busqueda.toLowerCase()))
     : casos
 
+  // Sin búsqueda: top 25 en la tabla del dashboard; con búsqueda: todos los que coincidan
+  const casosTabla = busqueda.trim() ? casosFiltrados : casosFiltrados.slice(0, 25)
+
   return (
     <div className="dashboard-layout">
 
@@ -366,7 +369,7 @@ export default function Dashboard({
                       </tr>
                     </thead>
                     <tbody>
-                      {casosFiltrados.map((caso) => (
+                      {casosTabla.map((caso) => (
                         <tr key={caso.id_siniestro}>
                           <td style={{ fontWeight: 700, fontFamily: 'JetBrains Mono', fontSize: 12 }}>
                             {caso.id_siniestro}
@@ -406,9 +409,11 @@ export default function Dashboard({
 
                 <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid #c4c6d3', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#eff4ff' }}>
                   <span style={{ fontSize: 12, color: '#434652' }}>
-                    Mostrando {casosFiltrados.length} casos
-                    {filtro ? ` · Filtro: ${filtro}` : ' · Todos los niveles'}
-                    {busqueda && ` · Búsqueda: "${busqueda}"`}
+                    {busqueda.trim()
+                      ? `${casosFiltrados.length} resultado${casosFiltrados.length !== 1 ? 's' : ''} para "${busqueda}" de ${casos.length} cargados`
+                      : `Mostrando top ${casosTabla.length} · ${total.toLocaleString()} en sistema`
+                    }
+                    {filtro ? ` · Filtro: ${filtro}` : ''}
                   </span>
                   <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                     <span style={{ fontSize: 12, color: '#434652', fontFamily: 'JetBrains Mono' }}>
