@@ -168,6 +168,18 @@ body {
 
 .login-input::placeholder { color: rgba(148,186,255,0.25); }
 
+/* Fix browser autofill — prevents white background override */
+.login-input:-webkit-autofill,
+.login-input:-webkit-autofill:hover,
+.login-input:-webkit-autofill:focus,
+.login-input:-webkit-autofill:active {
+  -webkit-text-fill-color: #fff !important;
+  -webkit-box-shadow: 0 0 0 40px #112040 inset !important;
+  box-shadow: 0 0 0 40px #112040 inset !important;
+  transition: background-color 5000s ease-in-out 0s;
+  caret-color: #fff;
+}
+
 .login-input:focus {
   border-color: rgba(0,105,255,0.55);
   background: rgba(0,83,207,0.1);
@@ -276,3 +288,13 @@ body {
 .animate-shake { animation: shake 0.2s ease-in-out 0s 2; }
 
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .login-page { padding: 1.25rem; }
+  .login-main { gap: 1.25rem; }
+  .login-card { padding: 1.5rem 1.25rem; }
+  .login-title { font-size: 1.6rem; }
+  .login-orb-1 { width: 300px; height: 300px; }
+  .login-orb-2 { width: 220px; height: 220px; }
+}

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { obtenerSesion } from '../../services/authService'
 
 type Vista = 'dashboard' | 'casos' | 'agente' | 'reportes' | 'configuracion'
@@ -31,15 +32,16 @@ const ROL_COLOR: Record<string, string> = {
 export default function Sidebar({ vistaActiva, onNav, onLogout }: SidebarProps) {
   const usuario = obtenerSesion()
   const rol     = usuario?.rol ?? 'analista'
+  const [mobileOpen, setMobileOpen] = useState(false)
+
+  function navAndClose(v: string) { onNav(v); setMobileOpen(false) }
 
   const navItems = ALL_NAV_ITEMS.filter(item => item.roles.includes(rol))
 
   const inicial = usuario?.nombre?.charAt(0).toUpperCase() ?? 'U'
 
-  return (
-    <aside className="hidden md:flex flex-col h-full py-6 px-4 gap-4 bg-surface-container w-64 flex-shrink-0 z-50 border-r border-surface-container-high"
-      style={{ minHeight: '100vh' }}>
-
+  const sidebarContent = (
+    <>
       {/* Logo */}
       <div className="px-2 mb-4">
         <div className="flex items-center gap-2 mb-1">
@@ -96,7 +98,7 @@ export default function Sidebar({ vistaActiva, onNav, onLogout }: SidebarProps) 
           const active = vistaActiva === vista
           return (
             <button key={label}
-              onClick={() => onNav(vista)}
+              onClick={() => navAndClose(vista)}
               className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors w-full text-left border-none cursor-pointer ${
                 active
                   ? 'text-primary font-bold bg-surface-container-high'
@@ -136,6 +138,60 @@ export default function Sidebar({ vistaActiva, onNav, onLogout }: SidebarProps) 
           Gemini activo. Analizando siniestros en tiempo real.
         </p>
       </div>
-    </aside>
+    </>
+  )
+
+  return (
+    <>
+      {/* Hamburger button — mobile only */}
+      <button
+        className="md:hidden"
+        onClick={() => setMobileOpen(true)}
+        style={{
+          position: 'fixed', top: 14, left: 14, zIndex: 200,
+          background: '#002662', color: '#fff', border: 'none',
+          borderRadius: 10, width: 40, height: 40,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          cursor: 'pointer', boxShadow: '0 2px 12px rgba(0,0,0,0.2)',
+        }}>
+        <span className="material-symbols-outlined" style={{ fontSize: 22 }}>menu</span>
+      </button>
+
+      {/* Mobile backdrop */}
+      {mobileOpen && (
+        <div
+          className="md:hidden"
+          onClick={() => setMobileOpen(false)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 150,
+            background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(2px)',
+          }}
+        />
+      )}
+
+      {/* Mobile drawer */}
+      <aside
+        className="md:hidden flex flex-col py-6 px-4 gap-4 bg-surface-container w-72 flex-shrink-0 z-[160] border-r border-surface-container-high"
+        style={{
+          position: 'fixed', top: 0, left: 0, height: '100vh',
+          transform: mobileOpen ? 'translateX(0)' : 'translateX(-100%)',
+          transition: 'transform 0.25s ease',
+          overflowY: 'auto',
+        }}>
+        <button
+          onClick={() => setMobileOpen(false)}
+          style={{ position: 'absolute', top: 12, right: 12, background: 'none', border: 'none', cursor: 'pointer', color: '#434652' }}>
+          <span className="material-symbols-outlined">close</span>
+        </button>
+        {sidebarContent}
+      </aside>
+
+      {/* Desktop sidebar */}
+      <aside
+        className="hidden md:flex flex-col py-6 px-4 gap-4 bg-surface-container w-64 flex-shrink-0 z-50 border-r border-surface-container-high"
+        style={{ minHeight: '100vh' }}>
+        {sidebarContent}
+      </aside>
+    </>
   )
 }
