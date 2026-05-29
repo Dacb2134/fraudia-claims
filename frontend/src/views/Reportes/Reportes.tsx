@@ -76,22 +76,12 @@ export default function Reportes({ onNav, onLogout, onVerDetalle }: NavProps & {
         {/* Header */}
         <header className="flex justify-between items-center px-margin-desktop h-16 bg-surface-container-lowest shadow-sm flex-shrink-0">
           <h2 className="font-title-md text-title-md font-black text-primary">Reportes y Análisis Ejecutivo</h2>
-          <div className="flex items-center gap-2">
-            {([
-              { nivel: 'ROJO',     label: '🔴 Alto Riesgo',  color: '#ba1a1a' },
-              { nivel: 'AMARILLO', label: '🟡 Medio Riesgo', color: '#f97316' },
-              { nivel: 'todos',    label: '📋 Todos',         color: '#002662' },
-            ] as const).map(({ nivel, label, color }) => (
-              <a key={nivel}
-                href={`${API_URL}/api/v1/reporte/exportar?nivel=${nivel}`}
-                target="_blank" rel="noreferrer"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold no-underline border transition-colors hover:opacity-80"
-                style={{ color, borderColor: color, background: 'white' }}>
-                <span className="material-symbols-outlined text-[16px]">download</span>
-                {label}
-              </a>
-            ))}
-          </div>
+          <button
+            onClick={() => document.getElementById('export-section')?.scrollIntoView({ behavior: 'smooth' })}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border border-primary text-primary bg-white hover:bg-primary hover:text-white transition-colors cursor-pointer">
+            <span className="material-symbols-outlined text-[18px]">download</span>
+            Exportar Reporte
+          </button>
         </header>
 
         <div className="flex-1 overflow-y-auto p-margin-desktop space-y-gutter">
@@ -164,35 +154,46 @@ export default function Reportes({ onNav, onLogout, onVerDetalle }: NavProps & {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-outline-variant/15">
-                        {data.top_10_casos_criticos.map((caso, i) => (
-                          <tr key={caso.id_siniestro} className="hover:bg-surface-container-low/50 transition-colors">
-                            <td className="px-4 py-3 text-sm font-bold text-on-surface-variant">{i + 1}</td>
-                            <td className="px-4 py-3">
-                              <span className="font-label-sm text-label-sm font-bold text-primary">{caso.id_siniestro}</span>
-                            </td>
-                            <td className="px-4 py-3 text-sm text-on-surface-variant">{caso.ramo}</td>
-                            <td className="px-4 py-3 text-sm font-semibold">{fmt(caso.monto_reclamado)}</td>
-                            <td className="px-4 py-3">
-                              <div className="flex items-center gap-2">
-                                <div className="w-16 h-1.5 bg-surface-container-highest rounded-full overflow-hidden">
-                                  <div className="h-full rounded-full"
-                                    style={{ width: `${caso.score_normalizado}%`, background: NIVEL_COLOR[caso.nivel_riesgo as keyof typeof NIVEL_COLOR] || '#ba1a1a' }}/>
-                                </div>
-                                <span className="text-sm font-bold" style={{ color: NIVEL_COLOR[caso.nivel_riesgo as keyof typeof NIVEL_COLOR] || '#ba1a1a' }}>
-                                  {caso.score_normalizado}
-                                </span>
-                              </div>
-                            </td>
-                            <td className="px-4 py-3">
-                              <button
-                                onClick={() => onVerDetalle(caso.id_siniestro)}
-                                className="text-primary hover:bg-surface-container-high rounded-lg p-1.5 transition-colors border-none cursor-pointer bg-transparent"
-                                title="Ver detalle">
-                                <span className="material-symbols-outlined text-[18px]">visibility</span>
-                              </button>
+                        {data.top_10_casos_criticos.length === 0 ? (
+                          <tr>
+                            <td colSpan={6} className="px-4 py-12 text-center text-on-surface-variant">
+                              <span className="material-symbols-outlined text-[40px] block mb-2 opacity-40">inbox</span>
+                              No hay casos críticos en el nivel actual.
+                              <br/>
+                              <span className="text-xs">Los casos de riesgo medio se pueden revisar en Gestión de Casos.</span>
                             </td>
                           </tr>
-                        ))}
+                        ) : (
+                          data.top_10_casos_criticos.map((caso, i) => (
+                            <tr key={caso.id_siniestro} className="hover:bg-surface-container-low/50 transition-colors">
+                              <td className="px-4 py-3 text-sm font-bold text-on-surface-variant">{i + 1}</td>
+                              <td className="px-4 py-3">
+                                <span className="font-label-sm text-label-sm font-bold text-primary">{caso.id_siniestro}</span>
+                              </td>
+                              <td className="px-4 py-3 text-sm text-on-surface-variant">{caso.ramo}</td>
+                              <td className="px-4 py-3 text-sm font-semibold">{fmt(caso.monto_reclamado)}</td>
+                              <td className="px-4 py-3">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-16 h-1.5 bg-surface-container-highest rounded-full overflow-hidden">
+                                    <div className="h-full rounded-full"
+                                      style={{ width: `${caso.score_normalizado}%`, background: NIVEL_COLOR[caso.nivel_riesgo as keyof typeof NIVEL_COLOR] || '#ba1a1a' }}/>
+                                  </div>
+                                  <span className="text-sm font-bold" style={{ color: NIVEL_COLOR[caso.nivel_riesgo as keyof typeof NIVEL_COLOR] || '#ba1a1a' }}>
+                                    {caso.score_normalizado}
+                                  </span>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3">
+                                <button
+                                  onClick={() => onVerDetalle(caso.id_siniestro)}
+                                  className="text-primary hover:bg-surface-container-high rounded-lg p-1.5 transition-colors border-none cursor-pointer bg-transparent"
+                                  title="Ver detalle">
+                                  <span className="material-symbols-outlined text-[18px]">visibility</span>
+                                </button>
+                              </td>
+                            </tr>
+                          ))
+                        )}
                       </tbody>
                     </table>
                   </div>
@@ -220,7 +221,10 @@ export default function Reportes({ onNav, onLogout, onVerDetalle }: NavProps & {
                               background: r.pct_riesgo > 20 ? '#ba1a1a' : r.pct_riesgo > 10 ? '#f97316' : '#16a34a',
                             }}/>
                         </div>
-                        <p className="text-[11px] text-on-surface-variant mt-0.5">{r.total} total · {r.rojos} rojos</p>
+                        <p className="text-[11px] text-on-surface-variant mt-0.5">
+                          {r.total} siniestros · {r.rojos} alto riesgo
+                          {r.rojos === 0 && <span className="text-green-600"> · sin alertas críticas</span>}
+                        </p>
                       </div>
                     ))}
                   </div>
@@ -250,10 +254,11 @@ export default function Reportes({ onNav, onLogout, onVerDetalle }: NavProps & {
               </section>
 
               {/* ── Exportar ── */}
-              <section className="bg-primary-container rounded-xl p-6 flex flex-col md:flex-row items-center justify-between gap-4">
+              <section id="export-section" className="rounded-xl p-6 flex flex-col md:flex-row items-center justify-between gap-4"
+                style={{ background: 'linear-gradient(135deg, #002662 0%, #003a8f 100%)' }}>
                 <div>
-                  <h3 className="font-medium text-white mb-1">Exportar reporte para auditoría</h3>
-                  <p className="text-sm text-primary-fixed-dim">Descarga un CSV con todos los casos del nivel seleccionado, listo para revisión externa.</p>
+                  <h3 className="font-medium mb-1" style={{ color: '#fff' }}>Exportar reporte para auditoría</h3>
+                  <p className="text-sm" style={{ color: '#b9c9ed' }}>Descarga un CSV con todos los casos del nivel seleccionado, listo para revisión externa.</p>
                 </div>
                 <div className="flex flex-wrap gap-3">
                   {([

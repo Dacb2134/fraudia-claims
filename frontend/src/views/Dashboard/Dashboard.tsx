@@ -83,33 +83,49 @@ export default function Dashboard({
               </button>
               {showNotif && (
                 <div style={{
+                  animation: 'dropdownIn 0.18s ease-out',
                   position: 'absolute', top: '100%', right: 0, marginTop: 8, zIndex: 200,
                   background: '#fff', borderRadius: 12, border: '1px solid #c4c6d3',
                   boxShadow: '0 8px 24px rgba(0,0,0,0.12)', width: 300,
                 }}>
-                  <div style={{ padding: '12px 16px', borderBottom: '1px solid #c4c6d3', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: '#002662' }}>Casos de Alto Riesgo</span>
-                    <button onClick={() => setShowNotif(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: '#747783', lineHeight: 1 }}>×</button>
-                  </div>
-                  {casosFiltrados.filter(c => c.nivel_riesgo === 'ROJO').slice(0, 5).map(c => (
-                    <div
-                      key={c.id_siniestro}
-                      onClick={() => { onVerDetalle(c.id_siniestro); setShowNotif(false) }}
-                      style={{ padding: '10px 16px', borderBottom: '1px solid #f0f2fa', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div>
-                        <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: '#ba1a1a', fontFamily: 'JetBrains Mono' }}>{c.id_siniestro}</p>
-                        <p style={{ margin: 0, fontSize: 11, color: '#434652' }}>{c.ramo} · {c.sucursal}</p>
-                      </div>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: '#ba1a1a' }}>Score {c.score_riesgo}</span>
-                    </div>
-                  ))}
-                  <div style={{ padding: '8px 16px' }}>
-                    <button
-                      onClick={() => { onNav?.('casos'); setShowNotif(false) }}
-                      style={{ width: '100%', padding: '6px', background: '#e6eeff', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 12, color: '#002662', fontWeight: 600 }}>
-                      Ver todos los casos →
-                    </button>
-                  </div>
+                  {(() => {
+                    const rojos   = casosFiltrados.filter(c => c.nivel_riesgo === 'ROJO')
+                    const mostrar = rojos.length > 0 ? rojos : casosFiltrados.filter(c => c.nivel_riesgo === 'AMARILLO')
+                    const esRojo  = rojos.length > 0
+                    const titulo  = esRojo ? 'Casos de Alto Riesgo' : mostrar.length > 0 ? 'Casos de Riesgo Medio' : 'Sin alertas activas'
+                    const color   = esRojo ? '#ba1a1a' : '#f97316'
+                    return (
+                      <>
+                        <div style={{ padding: '12px 16px', borderBottom: '1px solid #c4c6d3', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: '#002662' }}>{titulo}</span>
+                          <button onClick={() => setShowNotif(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: '#747783', lineHeight: 1 }}>×</button>
+                        </div>
+                        {mostrar.length === 0 ? (
+                          <div style={{ padding: '16px', textAlign: 'center', color: '#747783', fontSize: 12 }}>No hay alertas activas</div>
+                        ) : (
+                          mostrar.slice(0, 5).map(c => (
+                            <div
+                              key={c.id_siniestro}
+                              onClick={() => { onVerDetalle(c.id_siniestro); setShowNotif(false) }}
+                              style={{ padding: '10px 16px', borderBottom: '1px solid #f0f2fa', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <div>
+                                <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color, fontFamily: 'JetBrains Mono' }}>{c.id_siniestro}</p>
+                                <p style={{ margin: 0, fontSize: 11, color: '#434652' }}>{c.ramo} · {c.sucursal}</p>
+                              </div>
+                              <span style={{ fontSize: 12, fontWeight: 700, color }}>Score {c.score_riesgo}</span>
+                            </div>
+                          ))
+                        )}
+                        <div style={{ padding: '8px 16px' }}>
+                          <button
+                            onClick={() => { onNav?.('casos'); setShowNotif(false) }}
+                            style={{ width: '100%', padding: '6px', background: '#e6eeff', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 12, color: '#002662', fontWeight: 600 }}>
+                            Ver todos los casos →
+                          </button>
+                        </div>
+                      </>
+                    )
+                  })()}
                 </div>
               )}
             </div>
@@ -415,8 +431,8 @@ export default function Dashboard({
         <footer className="dashboard-footer">
           <p style={{ margin: 0 }}>Este sistema sugiere revisión, no determina fraude. © 2026 FraudIA Claims.</p>
           <div>
-            <a href="#">Ética AI</a>
-            <a href="#">Soporte Técnico</a>
+            <button onClick={() => onNav?.('configuracion')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#434652', fontSize: 12, marginLeft: '1.5rem' }}>Ética AI</button>
+            <button onClick={() => onNav?.('agente')}        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#434652', fontSize: 12, marginLeft: '1.5rem' }}>Soporte Técnico</button>
           </div>
         </footer>
       </main>

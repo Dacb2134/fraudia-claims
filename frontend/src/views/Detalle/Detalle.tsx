@@ -512,9 +512,9 @@ export default function Detalle({
         <span style={{ fontWeight: 600, color: '#121c2a' }}>FraudIA Claims</span>
         <p style={{ margin: 0 }}>Este sistema sugiere revisión, no determina fraude. © 2026 FraudIA Claims.</p>
         <div>
-          <a href="#">Ética AI</a>
-          <a href="#">Soporte Técnico</a>
-          <a href="#">Documentación</a>
+          <button onClick={() => onNav?.('configuracion')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#434652', fontSize: 12 }}>Ética AI</button>
+          <button onClick={() => onNav?.('agente')}        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#434652', fontSize: 12 }}>Soporte Técnico</button>
+          <button onClick={() => onNav?.('configuracion')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#434652', fontSize: 12 }}>Documentación</button>
         </div>
       </footer>
 

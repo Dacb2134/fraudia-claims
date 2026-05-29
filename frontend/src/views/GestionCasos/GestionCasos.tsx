@@ -125,29 +125,45 @@ export default function GestionCasos({ onNav, onLogout, onVerDetalle }: NavProps
                 </button>
                 {showNotif && (
                   <div style={{
+                    animation: 'dropdownIn 0.18s ease-out',
                     position: 'absolute', top: '100%', right: 0, marginTop: 8,
                     background: '#fff', borderRadius: 12, border: '1px solid #c4c6d3',
                     boxShadow: '0 8px 24px rgba(0,0,0,0.12)', width: 300, zIndex: 200,
                   }}>
-                    <div style={{ padding: '12px 16px', borderBottom: '1px solid #c4c6d3', fontWeight: 700, fontSize: 13, color: '#002662' }}>
-                      Alertas del Sistema
-                    </div>
-                    {casos.filter(c => c.nivel_riesgo === 'ROJO').slice(0, 4).map(c => (
-                      <div
-                        key={c.id_siniestro}
-                        onClick={() => { onVerDetalle(c.id_siniestro); setShowNotif(false) }}
-                        style={{ padding: '10px 16px', borderBottom: '1px solid #f0f2fa', cursor: 'pointer', fontSize: 12 }}>
-                        <strong style={{ color: '#ba1a1a' }}>{c.id_siniestro}</strong>
-                        <span style={{ color: '#434652' }}> · {c.ramo} · Score {c.score_riesgo}</span>
-                      </div>
-                    ))}
-                    <div style={{ padding: '8px 16px' }}>
-                      <button
-                        onClick={() => setShowNotif(false)}
-                        style={{ width: '100%', padding: 6, background: '#e6eeff', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 12, color: '#002662', fontWeight: 600 }}>
-                        Cerrar
-                      </button>
-                    </div>
+                    {(() => {
+                      const rojos   = casos.filter(c => c.nivel_riesgo === 'ROJO')
+                      const mostrar = rojos.length > 0 ? rojos : casos.filter(c => c.nivel_riesgo === 'AMARILLO')
+                      const esRojo  = rojos.length > 0
+                      const titulo  = esRojo ? 'Casos de Alto Riesgo' : mostrar.length > 0 ? 'Casos de Riesgo Medio' : 'Sin alertas activas'
+                      const color   = esRojo ? '#ba1a1a' : '#f97316'
+                      return (
+                        <>
+                          <div style={{ padding: '12px 16px', borderBottom: '1px solid #c4c6d3', fontWeight: 700, fontSize: 13, color: '#002662' }}>
+                            {titulo}
+                          </div>
+                          {mostrar.length === 0 ? (
+                            <div style={{ padding: '16px', textAlign: 'center', color: '#747783', fontSize: 12 }}>No hay alertas activas</div>
+                          ) : (
+                            mostrar.slice(0, 4).map(c => (
+                              <div
+                                key={c.id_siniestro}
+                                onClick={() => { onVerDetalle(c.id_siniestro); setShowNotif(false) }}
+                                style={{ padding: '10px 16px', borderBottom: '1px solid #f0f2fa', cursor: 'pointer', fontSize: 12 }}>
+                                <strong style={{ color }}>{c.id_siniestro}</strong>
+                                <span style={{ color: '#434652' }}> · {c.ramo} · Score {c.score_riesgo}</span>
+                              </div>
+                            ))
+                          )}
+                          <div style={{ padding: '8px 16px' }}>
+                            <button
+                              onClick={() => setShowNotif(false)}
+                              style={{ width: '100%', padding: 6, background: '#e6eeff', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 12, color: '#002662', fontWeight: 600 }}>
+                              Cerrar
+                            </button>
+                          </div>
+                        </>
+                      )
+                    })()}
                   </div>
                 )}
               </div>
@@ -401,8 +417,16 @@ export default function GestionCasos({ onNav, onLogout, onVerDetalle }: NavProps
             Este sistema sugiere revisión, no determina fraude. © 2026 FraudIA Claims.
           </p>
           <div className="flex gap-6">
-            {['Ética AI', 'Soporte Técnico', 'Documentación'].map(l => (
-              <a key={l} className="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors" href="#">{l}</a>
+            {[
+              { label: 'Ética AI',       action: () => onNav('configuracion') },
+              { label: 'Soporte Técnico', action: () => onNav('agente')        },
+              { label: 'Documentación',   action: () => onNav('configuracion') },
+            ].map(({ label, action }) => (
+              <button key={label} onClick={action}
+                className="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors"
+                style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+                {label}
+              </button>
             ))}
           </div>
         </footer>

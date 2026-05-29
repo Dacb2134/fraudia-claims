@@ -251,6 +251,7 @@ export default function AgenteIA({ onNav, onLogout }: NavProps) {
               </button>
               {showNotif && (
                 <div style={{
+                  animation: 'dropdownIn 0.18s ease-out',
                   position: 'absolute', top: '100%', right: 0, marginTop: 8,
                   background: 'white', borderRadius: 12, border: '1px solid #c4c6d3',
                   boxShadow: '0 8px 24px rgba(0,0,0,0.12)', width: 300, zIndex: 200,
@@ -293,6 +294,7 @@ export default function AgenteIA({ onNav, onLogout }: NavProps) {
               </button>
               {showHelp && (
                 <div style={{
+                  animation: 'dropdownIn 0.18s ease-out',
                   position: 'absolute', top: '100%', right: 0, marginTop: 8,
                   background: 'white', borderRadius: 12, border: '1px solid #c4c6d3',
                   boxShadow: '0 8px 24px rgba(0,0,0,0.12)', width: 320, zIndex: 200,
