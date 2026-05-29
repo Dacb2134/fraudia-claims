@@ -16,9 +16,6 @@ COPY . .
 
 EXPOSE 8000
 
-HEALTHCHECK --interval=30s --timeout=10s --retries=3 --start-period=60s \
-  CMD curl -f http://localhost:${PORT:-8000}/health || exit 1
-
 CMD ["sh", "-c", "\
   echo '⏳ Esperando MySQL...' && \
   n=0; until python -c \"import os; from sqlalchemy import create_engine, text; e = create_engine(os.getenv('DB_URL'), connect_args={'connect_timeout': 3}); e.connect().execute(text('SELECT 1')); print('✅ MySQL listo')\" 2>/dev/null; do \
