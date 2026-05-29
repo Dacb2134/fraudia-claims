@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import './Dashboard.css'
 import Sidebar from '../../components/shared/Sidebar'
 import { useDashboard } from '../../controllers/useDashboard'
@@ -25,6 +26,7 @@ export default function Dashboard({
 }) {
   const { stats, casos, filtro, setFiltro, loading, error } = useDashboard()
   const usuario = obtenerSesion()
+  const [busqueda, setBusqueda] = useState('')
 
   const total    = stats?.resumen.total_siniestros ?? 0
   const pctRojo  = total ? ((stats?.semaforo.rojo.total    ?? 0) / total * 100).toFixed(1) : '0'
@@ -39,6 +41,14 @@ export default function Dashboard({
   const inicialNombre = usuario?.nombre?.charAt(0).toUpperCase() ?? 'A'
   const rolLabel      = usuario?.rol === 'admin' ? 'Administrador'
     : usuario?.rol === 'supervisor' ? 'Supervisor' : 'Analista de Riesgos'
+
+  const casosFiltrados = busqueda.trim()
+    ? casos.filter(c =>
+        c.id_siniestro.toLowerCase().includes(busqueda.toLowerCase()) ||
+        c.id_asegurado.toLowerCase().includes(busqueda.toLowerCase()) ||
+        c.ramo.toLowerCase().includes(busqueda.toLowerCase()) ||
+        c.sucursal?.toLowerCase().includes(busqueda.toLowerCase()))
+    : casos
 
   return (
     <div className="dashboard-layout">
@@ -55,7 +65,12 @@ export default function Dashboard({
           <div className="header-right">
             <div className="search-bar">
               <span className="material-symbols-outlined" style={{ fontSize: 20 }}>search</span>
-              <input placeholder="Buscar siniestro..." type="text" />
+              <input
+                placeholder="Buscar siniestro..."
+                type="text"
+                value={busqueda}
+                onChange={e => setBusqueda(e.target.value)}
+              />
             </div>
             <button className="icon-btn">
               <span className="material-symbols-outlined">notifications</span>
@@ -298,7 +313,7 @@ export default function Dashboard({
                       </tr>
                     </thead>
                     <tbody>
-                      {casos.map((caso) => (
+                      {casosFiltrados.map((caso) => (
                         <tr key={caso.id_siniestro}>
                           <td style={{ fontWeight: 700, fontFamily: 'JetBrains Mono', fontSize: 12 }}>
                             {caso.id_siniestro}
@@ -338,12 +353,22 @@ export default function Dashboard({
 
                 <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid #c4c6d3', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#eff4ff' }}>
                   <span style={{ fontSize: 12, color: '#434652' }}>
-                    Mostrando {casos.length} casos
+                    Mostrando {casosFiltrados.length} casos
                     {filtro ? ` · Filtro: ${filtro}` : ' · Todos los niveles'}
+                    {busqueda && ` · Búsqueda: "${busqueda}"`}
                   </span>
-                  <span style={{ fontSize: 12, color: '#434652', fontFamily: 'JetBrains Mono' }}>
-                    Total en sistema: {total.toLocaleString()}
-                  </span>
+                  <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                    <span style={{ fontSize: 12, color: '#434652', fontFamily: 'JetBrains Mono' }}>
+                      Total en sistema: {total.toLocaleString()}
+                    </span>
+                    {onNav && (
+                      <button
+                        onClick={() => onNav('casos')}
+                        style={{ padding: '4px 12px', background: '#002662', color: '#fff', border: 'none', borderRadius: 8, fontSize: 12, cursor: 'pointer', fontWeight: 600 }}>
+                        Ver todos →
+                      </button>
+                    )}
+                  </div>
                 </div>
               </section>
             </>

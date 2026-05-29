@@ -27,9 +27,13 @@ function formatMonto(n: number) {
 export default function Detalle({
   siniestroId,
   onVolver,
+  onNav,
+  onLogout,
 }: {
   siniestroId: string
   onVolver: () => void
+  onNav?: (v: string) => void
+  onLogout?: () => void
 }) {
   const {
     detalle, loading, error,
@@ -160,12 +164,14 @@ export default function Detalle({
           <div className="detalle-nav-tabs" style={{ marginLeft: '1rem' }}>
             <button className="tab-inactive" onClick={onVolver}>Dashboard</button>
             <button className="tab-active">Gestión de Casos</button>
-            <button className="tab-inactive">Reportes</button>
+            <button className="tab-inactive" onClick={() => onNav?.('reportes')}>Reportes</button>
           </div>
         </div>
         <div className="detalle-header-right">
-          <span className="material-symbols-outlined" style={{ color: '#434652', cursor: 'pointer' }}>notifications</span>
-          <span className="material-symbols-outlined" style={{ color: '#434652', cursor: 'pointer' }}>help</span>
+          <span className="material-symbols-outlined" style={{ color: '#434652', cursor: 'pointer' }}
+            onClick={() => onNav?.('reportes')} title="Reportes">notifications</span>
+          <span className="material-symbols-outlined" style={{ color: '#434652', cursor: 'pointer' }}
+            onClick={() => onNav?.('configuracion')} title="Configuración">help</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <span style={{ fontSize: 12, color: '#434652', fontFamily: 'JetBrains Mono' }}>
               {usuario?.nombre ?? 'Analista de Riesgos'}
@@ -187,18 +193,24 @@ export default function Detalle({
             <span className="material-symbols-outlined">dashboard</span>
             Dashboard
           </button>
-          <a href="#" className="sidebar-nav-link active">
+          <button className="sidebar-nav-link active" onClick={() => onNav?.('casos')} style={{ background: 'none', border: 'none', cursor: 'pointer', width: '100%', textAlign: 'left' }}>
             <span className="material-symbols-outlined">assignment</span>
             Gestión de Casos
-          </a>
-          <a href="#" className="sidebar-nav-link">
+          </button>
+          <button className="sidebar-nav-link" onClick={() => onNav?.('reportes')} style={{ background: 'none', border: 'none', cursor: 'pointer', width: '100%', textAlign: 'left' }}>
             <span className="material-symbols-outlined">analytics</span>
             Reportes
-          </a>
-          <a href="#" className="sidebar-nav-link">
+          </button>
+          <button className="sidebar-nav-link" onClick={() => onNav?.('configuracion')} style={{ background: 'none', border: 'none', cursor: 'pointer', width: '100%', textAlign: 'left' }}>
             <span className="material-symbols-outlined">settings</span>
             Configuración
-          </a>
+          </button>
+          {onLogout && (
+            <button className="sidebar-nav-link" onClick={onLogout} style={{ background: 'none', border: 'none', cursor: 'pointer', width: '100%', textAlign: 'left', color: '#ba1a1a' }}>
+              <span className="material-symbols-outlined">logout</span>
+              Cerrar Sesión
+            </button>
+          )}
 
           {/* Info del siniestro en sidebar */}
           <div style={{ marginTop: 'auto', padding: '1rem', background: 'rgba(0,38,98,0.05)', borderRadius: '0.75rem', border: '1px solid rgba(0,38,98,0.1)' }}>
@@ -257,7 +269,7 @@ export default function Detalle({
                   </div>
                 </div>
                 <div className="hero-actions">
-                  <button className="btn-primary">Iniciar Auditoría</button>
+                  <button className="btn-primary" onClick={() => setChatOpen(true)}>Consultar Agente IA</button>
                   <button className="btn-outline" onClick={onVolver}>Volver al Dashboard</button>
                 </div>
               </div>

@@ -24,9 +24,9 @@ from sklearn.metrics import (classification_report, roc_auc_score,
                               precision_score, recall_score, f1_score)
 from sklearn.preprocessing import LabelEncoder
 
-MODEL_PATH  = Path("/app/ai_data_core/data/processed/fraud_model.pkl")
-SCALER_PATH = Path("/app/ai_data_core/data/processed/label_encoders.pkl")
-CSV_PATH    = Path("/app/ai_data_core/data/synthetic/siniestros_scored.csv")
+MODEL_PATH  = Path("/app/backend/ai_data_core/data/processed/fraud_model.pkl")
+SCALER_PATH = Path("/app/backend/ai_data_core/data/processed/label_encoders.pkl")
+CSV_PATH    = Path("/app/backend/ai_data_core/data/synthetic/siniestros_scored.csv")
 
 
 # ── Features que usa el modelo ────────────────────────────────────────────────

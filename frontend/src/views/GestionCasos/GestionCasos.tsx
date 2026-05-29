@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import Sidebar from '../../components/shared/Sidebar'
 import type { NavProps } from '../../App'
 import type { Siniestro } from '../../models'
-import { apiFetch } from '../../services/api'
+import { apiFetch, API_URL } from '../../services/api'
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 const RAMOS      = ['Todos los ramos', 'Vehículos', 'Hogar', 'Salud', 'Vida', 'Generales']
@@ -40,6 +40,8 @@ export default function GestionCasos({ onNav, onLogout, onVerDetalle }: NavProps
   const [sucFiltro,   setSucFiltro]   = useState('')
   const [busqueda,    setBusqueda]    = useState('')
   const [tabActivo,   setTabActivo]   = useState<'todos'|'ROJO'|'AMARILLO'|'VERDE'>('todos')
+  const [marcados,    setMarcados]    = useState<Record<string, 'revision'|'limpio'>>({})
+  const [toast,       setToast]       = useState<string | null>(null)
 
   const nivelEfectivo = tabActivo !== 'todos' ? tabActivo : nivelFiltro || undefined
 
@@ -65,6 +67,21 @@ export default function GestionCasos({ onNav, onLogout, onVerDetalle }: NavProps
   const totalPages = Math.ceil(total / PAGE_SIZE)
 
   function cambiarTab(t: typeof tabActivo) { setTabActivo(t); setNivelFiltro(''); setPage(1) }
+
+  function mostrarToast(msg: string) {
+    setToast(msg)
+    setTimeout(() => setToast(null), 2500)
+  }
+
+  function marcarRevision(id: string) {
+    setMarcados(prev => ({ ...prev, [id]: 'revision' }))
+    mostrarToast(`Caso ${id} marcado para revisión manual`)
+  }
+
+  function marcarLimpio(id: string) {
+    setMarcados(prev => ({ ...prev, [id]: 'limpio' }))
+    mostrarToast(`Caso ${id} marcado como sin anomalías`)
+  }
 
   return (
     <div className="bg-background text-on-surface flex min-h-screen overflow-hidden">
@@ -120,7 +137,7 @@ export default function GestionCasos({ onNav, onLogout, onVerDetalle }: NavProps
             </div>
             <div className="flex items-center gap-3">
               <a
-                href="http://localhost:8000/api/v1/reporte/exportar?nivel=todos"
+                href={`${API_URL}/api/v1/reporte/exportar?nivel=todos`}
                 target="_blank" rel="noreferrer"
                 className="flex items-center gap-2 px-4 py-2.5 bg-surface-container-highest text-primary font-body-md rounded-xl hover:bg-surface-variant transition-all no-underline">
                 <span className="material-symbols-outlined text-[20px]">ios_share</span>
@@ -277,10 +294,16 @@ export default function GestionCasos({ onNav, onLogout, onVerDetalle }: NavProps
                                 onClick={() => onVerDetalle(caso.id_siniestro)}>
                                 <span className="material-symbols-outlined">visibility</span>
                               </button>
-                              <button className="p-2 text-on-surface-variant hover:bg-tertiary-container hover:text-on-tertiary-container rounded-lg transition-all border-none cursor-pointer" title="Marcar para Revisión Manual">
+                              <button
+                                className={`p-2 rounded-lg transition-all border-none cursor-pointer ${marcados[caso.id_siniestro] === 'revision' ? 'bg-error text-white' : 'text-on-surface-variant hover:bg-error-container hover:text-error'}`}
+                                title="Marcar para Revisión Manual"
+                                onClick={() => marcarRevision(caso.id_siniestro)}>
                                 <span className="material-symbols-outlined">flag</span>
                               </button>
-                              <button className="p-2 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all border-none cursor-pointer" title="Marcar como Limpio">
+                              <button
+                                className={`p-2 rounded-lg transition-all border-none cursor-pointer ${marcados[caso.id_siniestro] === 'limpio' ? 'bg-green-500 text-white' : 'text-on-surface-variant hover:bg-green-100 hover:text-green-700'}`}
+                                title="Marcar como Sin Anomalías"
+                                onClick={() => marcarLimpio(caso.id_siniestro)}>
                                 <span className="material-symbols-outlined">check_circle</span>
                               </button>
                             </div>
@@ -341,6 +364,18 @@ export default function GestionCasos({ onNav, onLogout, onVerDetalle }: NavProps
           </div>
         </footer>
       </main>
+
+      {/* Toast */}
+      {toast && (
+        <div style={{
+          position: 'fixed', bottom: 100, left: '50%', transform: 'translateX(-50%)',
+          background: '#1a1c1e', color: '#fff', padding: '10px 20px', borderRadius: 10,
+          fontSize: 13, fontWeight: 500, zIndex: 200, whiteSpace: 'nowrap',
+          boxShadow: '0 4px 16px rgba(0,0,0,0.25)',
+        }}>
+          {toast}
+        </div>
+      )}
 
       {/* FAB IA */}
       <button

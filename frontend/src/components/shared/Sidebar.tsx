@@ -27,7 +27,7 @@ export default function Sidebar({ vistaActiva, onNav, onLogout }: SidebarProps) 
 
       <nav className="flex flex-col gap-2">
         {NAV_ITEMS.map(({ icon, label, vista }) => {
-          const active = vistaActiva === vista && label !== 'Reportes' && label !== 'Configuración'
+          const active = vistaActiva === vista
           return (
             <button key={label}
               onClick={() => onNav(vista)}

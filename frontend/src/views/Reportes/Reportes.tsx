@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import Sidebar from '../../components/shared/Sidebar'
-import { apiFetch } from '../../services/api'
+import { apiFetch, API_URL } from '../../services/api'
 import type { NavProps } from '../../App'
 
 // ─── Tipos ──────────────────────────────────────────────────────────────────
@@ -83,7 +83,7 @@ export default function Reportes({ onNav, onLogout, onVerDetalle }: NavProps & {
               { nivel: 'todos',    label: '📋 Todos',         color: '#002662' },
             ] as const).map(({ nivel, label, color }) => (
               <a key={nivel}
-                href={`http://localhost:8000/api/v1/reporte/exportar?nivel=${nivel}`}
+                href={`${API_URL}/api/v1/reporte/exportar?nivel=${nivel}`}
                 target="_blank" rel="noreferrer"
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold no-underline border transition-colors hover:opacity-80"
                 style={{ color, borderColor: color, background: 'white' }}>
@@ -255,7 +255,22 @@ export default function Reportes({ onNav, onLogout, onVerDetalle }: NavProps & {
                   <h3 className="font-medium text-white mb-1">Exportar reporte para auditoría</h3>
                   <p className="text-sm text-primary-fixed-dim">Descarga un CSV con todos los casos del nivel seleccionado, listo para revisión externa.</p>
                 </div>
-
+                <div className="flex flex-wrap gap-3">
+                  {([
+                    { nivel: 'ROJO',     label: 'Alto Riesgo',  bg: '#ba1a1a' },
+                    { nivel: 'AMARILLO', label: 'Medio Riesgo', bg: '#f97316' },
+                    { nivel: 'todos',    label: 'Todos',         bg: '#ffffff' },
+                  ] as const).map(({ nivel, label, bg }) => (
+                    <a key={nivel}
+                      href={`${API_URL}/api/v1/reporte/exportar?nivel=${nivel}`}
+                      target="_blank" rel="noreferrer"
+                      className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold no-underline transition-opacity hover:opacity-80"
+                      style={{ background: bg, color: nivel === 'todos' ? '#002662' : '#fff', border: nivel === 'todos' ? '1px solid #002662' : 'none' }}>
+                      <span className="material-symbols-outlined text-[18px]">download</span>
+                      Exportar {label}
+                    </a>
+                  ))}
+                </div>
               </section>
             </>
           )}
