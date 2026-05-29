@@ -254,26 +254,46 @@ export default function Reportes({ onNav, onLogout, onVerDetalle }: NavProps & {
               </section>
 
               {/* ── Exportar ── */}
-              <section id="export-section" className="rounded-xl p-6 flex flex-col md:flex-row items-center justify-between gap-4"
+              <section id="export-section" className="rounded-xl p-6 flex flex-col gap-5"
                 style={{ background: 'linear-gradient(135deg, #002662 0%, #003a8f 100%)' }}>
                 <div>
                   <h3 className="font-medium mb-1" style={{ color: '#fff' }}>Exportar reporte para auditoría</h3>
-                  <p className="text-sm" style={{ color: '#b9c9ed' }}>Descarga un CSV con todos los casos del nivel seleccionado, listo para revisión externa.</p>
+                  <p className="text-sm" style={{ color: '#b9c9ed' }}>
+                    Excel incluye formato con colores por nivel de riesgo y dos hojas (presentación + datos).
+                    CSV para importar en otros sistemas.
+                  </p>
                 </div>
-                <div className="flex flex-wrap gap-3">
+                <div className="flex flex-wrap gap-4">
                   {([
-                    { nivel: 'ROJO',     label: 'Alto Riesgo',  bg: '#ba1a1a' },
-                    { nivel: 'AMARILLO', label: 'Medio Riesgo', bg: '#f97316' },
-                    { nivel: 'todos',    label: 'Todos',         bg: '#ffffff' },
-                  ] as const).map(({ nivel, label, bg }) => (
-                    <a key={nivel}
-                      href={`${API_URL}/api/v1/reporte/exportar?nivel=${nivel}`}
-                      target="_blank" rel="noreferrer"
-                      className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold no-underline transition-opacity hover:opacity-80"
-                      style={{ background: bg, color: nivel === 'todos' ? '#002662' : '#fff', border: nivel === 'todos' ? '1px solid #002662' : 'none' }}>
-                      <span className="material-symbols-outlined text-[18px]">download</span>
-                      Exportar {label}
-                    </a>
+                    { nivel: 'ROJO',     label: 'Alto Riesgo',  accentBg: '#ba1a1a', accentText: '#fff' },
+                    { nivel: 'AMARILLO', label: 'Medio Riesgo', accentBg: '#f97316', accentText: '#fff' },
+                    { nivel: 'todos',    label: 'Todos',         accentBg: '#e6eeff', accentText: '#002662' },
+                  ] as const).map(({ nivel, label, accentBg, accentText }) => (
+                    <div key={nivel} className="flex flex-col gap-1.5">
+                      <span style={{ fontSize: 11, color: '#b9c9ed', fontFamily: 'JetBrains Mono' }}>
+                        {label}
+                      </span>
+                      <div className="flex rounded-lg overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.2)' }}>
+                        <a
+                          href={`${API_URL}/api/v1/reporte/exportar?nivel=${nivel}&formato=xlsx`}
+                          target="_blank" rel="noreferrer"
+                          className="flex items-center gap-1.5 px-3 py-2 text-sm font-semibold no-underline transition-opacity hover:opacity-80"
+                          style={{ background: accentBg, color: accentText, borderRight: '1px solid rgba(255,255,255,0.25)' }}
+                          title="Descargar Excel con formato (.xlsx)">
+                          <span className="material-symbols-outlined text-[16px]">table_chart</span>
+                          Excel
+                        </a>
+                        <a
+                          href={`${API_URL}/api/v1/reporte/exportar?nivel=${nivel}&formato=csv`}
+                          target="_blank" rel="noreferrer"
+                          className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold no-underline transition-opacity hover:opacity-80"
+                          style={{ background: 'rgba(255,255,255,0.12)', color: '#e6eeff' }}
+                          title="Descargar datos planos (.csv)">
+                          <span className="material-symbols-outlined text-[14px]">grid_on</span>
+                          CSV
+                        </a>
+                      </div>
+                    </div>
                   ))}
                 </div>
               </section>

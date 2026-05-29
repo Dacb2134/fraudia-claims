@@ -1,8 +1,8 @@
 """
-GET /api/v1/red/relaciones   — red de relaciones asegurados-proveedores
-GET /api/v1/red/proveedor/{id} — conexiones de un proveedor específico
-GET /api/v1/reporte/exportar — reporte CSV de casos críticos
-GET /api/v1/reporte/ejecutivo — resumen ejecutivo en JSON
+GET /api/v1/red/relaciones      — red de relaciones asegurados-proveedores
+GET /api/v1/red/proveedor/{id}  — conexiones de un proveedor específico
+GET /api/v1/reporte/exportar    — reporte Excel (.xlsx) o CSV de casos
+GET /api/v1/reporte/ejecutivo   — resumen ejecutivo en JSON
 """
 import io
 import csv
@@ -146,50 +146,146 @@ def get_red_proveedor(id_proveedor: str, db: Session = Depends(get_db)):
 # REPORTE EXPORTABLE
 # ══════════════════════════════════════════════════════════════════════════════
 
-@router_reporte.get("/exportar")
-def exportar_reporte(
-    nivel: str = "ROJO",
-    db: Session = Depends(get_db),
-):
-    """
-    Exporta casos sospechosos como CSV para auditoría.
-    Parámetro: nivel = ROJO | AMARILLO | todos
-    """
-    where = "" if nivel == "todos" else f"WHERE sc.nivel_riesgo = '{nivel.upper()}'"
+FIELDS = [
+    "id_siniestro", "id_asegurado", "id_poliza", "ramo", "cobertura",
+    "fecha_ocurrencia", "fecha_reporte", "monto_reclamado", "estado",
+    "sucursal", "proveedor", "score", "nivel_riesgo", "alertas_activadas",
+]
 
-    rows = db.execute(text(f"""
+HEADERS_LABEL = [
+    "ID Siniestro", "ID Asegurado", "ID Póliza", "Ramo", "Cobertura",
+    "Fecha Ocurrencia", "Fecha Reporte", "Monto Reclamado ($)", "Estado",
+    "Sucursal", "Proveedor", "Score", "Nivel Riesgo", "Alertas Activadas",
+]
+
+COL_WIDTHS = [14, 13, 14, 12, 18, 16, 14, 20, 14, 13, 13, 8, 14, 70]
+
+
+def _query_rows(nivel: str, db: Session):
+    nivel_upper = nivel.upper()
+    if nivel_upper not in ("ROJO", "AMARILLO", "VERDE"):
+        nivel_upper = None  # todos
+
+    where = "" if nivel_upper is None else "WHERE sc.nivel_riesgo = :nivel"
+    params = {} if nivel_upper is None else {"nivel": nivel_upper}
+
+    return db.execute(text(f"""
         SELECT
             s.id_siniestro, s.id_asegurado, s.id_poliza,
             s.ramo, s.cobertura, s.fecha_ocurrencia, s.fecha_reporte,
             s.monto_reclamado, s.estado, s.sucursal,
             s.id_proveedor_beneficiario AS proveedor,
-            sc.score_normalizado AS score,
+            sc.score_normalizado        AS score,
             sc.nivel_riesgo,
             sc.alertas_activadas
         FROM siniestros s
         JOIN scores_riesgo sc ON s.id_siniestro = sc.id_siniestro
         {where}
         ORDER BY sc.score_normalizado DESC
-    """)).mappings().all()
+    """), params).mappings().all()
 
-    # Generar CSV en memoria
-    output = io.StringIO()
-    writer = csv.DictWriter(output, fieldnames=[
-        "id_siniestro", "id_asegurado", "id_poliza", "ramo", "cobertura",
-        "fecha_ocurrencia", "fecha_reporte", "monto_reclamado", "estado",
-        "sucursal", "proveedor", "score", "nivel_riesgo", "alertas_activadas"
-    ])
-    writer.writeheader()
+
+@router_reporte.get("/exportar")
+def exportar_reporte(
+    nivel:   str = "todos",
+    formato: str = "xlsx",
+    db: Session = Depends(get_db),
+):
+    """
+    Exporta casos como Excel (.xlsx con 2 hojas) o CSV.
+    nivel:   ROJO | AMARILLO | VERDE | todos
+    formato: xlsx | csv
+    """
+    rows = _query_rows(nivel, db)
+
+    # ── CSV ──────────────────────────────────────────────────────────────────
+    if formato.lower() == "csv":
+        buf = io.StringIO()
+        writer = csv.DictWriter(buf, fieldnames=FIELDS)
+        writer.writeheader()
+        for row in rows:
+            writer.writerow({k: row.get(k, "") for k in FIELDS})
+        buf.seek(0)
+        return StreamingResponse(
+            io.BytesIO(buf.getvalue().encode("utf-8-sig")),
+            media_type="text/csv",
+            headers={"Content-Disposition": f'attachment; filename="reporte_fraude_{nivel.lower()}.csv"'},
+        )
+
+    # ── Excel ─────────────────────────────────────────────────────────────────
+    from openpyxl import Workbook
+    from openpyxl.styles import PatternFill, Font, Alignment
+    from openpyxl.utils import get_column_letter
+
+    wb = Workbook()
+
+    # ── Hoja 1: Reporte con formato ──────────────────────────────────────────
+    ws = wb.active
+    ws.title = "Reporte FraudIA"
+
+    HDR_FILL   = PatternFill("solid", fgColor="002662")
+    HDR_FONT   = Font(color="FFFFFF", bold=True, size=10)
+    HDR_ALIGN  = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    ROJO_FILL  = PatternFill("solid", fgColor="FFDAD6")
+    AMA_FILL   = PatternFill("solid", fgColor="FFF3CD")
+    VRD_FILL   = PatternFill("solid", fgColor="D6F5E3")
+    ROJO_FONT  = Font(color="93000A", size=10)
+    AMA_FONT   = Font(color="7B5A00", size=10)
+    VRD_FONT   = Font(color="005C28", size=10)
+    DATA_ALIGN = Alignment(vertical="center")
+
+    # Título
+    last_col = get_column_letter(len(FIELDS))
+    ws.merge_cells(f"A1:{last_col}1")
+    t = ws["A1"]
+    t.value = f"FraudIA Claims — Reporte de Siniestros · Nivel: {nivel.upper()} · {len(rows)} registros"
+    t.font  = Font(color="FFFFFF", bold=True, size=13)
+    t.fill  = PatternFill("solid", fgColor="001e5c")
+    t.alignment = Alignment(horizontal="center", vertical="center")
+    ws.row_dimensions[1].height = 30
+
+    # Cabeceras
+    for ci, lbl in enumerate(HEADERS_LABEL, 1):
+        c = ws.cell(row=2, column=ci, value=lbl)
+        c.fill      = HDR_FILL
+        c.font      = HDR_FONT
+        c.alignment = HDR_ALIGN
+    ws.row_dimensions[2].height = 22
+
+    # Filas de datos
+    for ri, row in enumerate(rows, 3):
+        nr   = str(row.get("nivel_riesgo", ""))
+        fill = ROJO_FILL if nr == "ROJO" else AMA_FILL if nr == "AMARILLO" else VRD_FILL
+        fnt  = ROJO_FONT if nr == "ROJO" else AMA_FONT  if nr == "AMARILLO" else VRD_FONT
+        for ci, field in enumerate(FIELDS, 1):
+            c = ws.cell(row=ri, column=ci, value=row.get(field))
+            c.fill      = fill
+            c.font      = fnt
+            c.alignment = DATA_ALIGN
+        ws.row_dimensions[ri].height = 15
+
+    # Anchos de columna
+    for ci, w in enumerate(COL_WIDTHS, 1):
+        ws.column_dimensions[get_column_letter(ci)].width = w
+
+    # Freeze panes (cabecera fija)
+    ws.freeze_panes = "A3"
+
+    # ── Hoja 2: Datos CSV (sin formato, para importar) ───────────────────────
+    ws2 = wb.create_sheet("Datos CSV")
+    ws2.append(FIELDS)
     for row in rows:
-        writer.writerow(dict(row))
+        ws2.append([str(row.get(f, "") or "") for f in FIELDS])
 
-    output.seek(0)
-    filename = f"reporte_fraude_{nivel.lower()}.csv"
+    # Guardar
+    excel_buf = io.BytesIO()
+    wb.save(excel_buf)
+    excel_buf.seek(0)
 
     return StreamingResponse(
-        io.BytesIO(output.getvalue().encode("utf-8-sig")),  # utf-8-sig para Excel
-        media_type="text/csv",
-        headers={"Content-Disposition": f"attachment; filename={filename}"}
+        excel_buf,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="reporte_fraude_{nivel.lower()}.xlsx"'},
     )
 
 

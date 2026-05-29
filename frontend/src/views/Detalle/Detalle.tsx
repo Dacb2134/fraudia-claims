@@ -4,6 +4,25 @@ import { useSiniestroDetalle } from '../../controllers/useSiniestroDetalle'
 import { obtenerSesion } from '../../services/authService'
 import Sidebar from '../../components/shared/Sidebar'
 
+function renderMarkdown(text: string): string {
+  return text
+    .replace(/^#### (.+)$/gm, '<h4 style="font-size:12px;font-weight:700;color:#002662;margin:8px 0 4px">$1</h4>')
+    .replace(/^### (.+)$/gm,  '<h3 style="font-size:13px;font-weight:700;color:#002662;margin:10px 0 5px;border-left:3px solid #002662;padding-left:6px">$1</h3>')
+    .replace(/^## (.+)$/gm,   '<h2 style="font-size:14px;font-weight:700;color:#002662;margin:12px 0 6px">$1</h2>')
+    .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
+    .replace(/\*\*(.+?)\*\*/g,     '<strong style="color:#002662">$1</strong>')
+    .replace(/\*(.+?)\*/g,         '<em>$1</em>')
+    .replace(/^(\d+)\. (.+)$/gm,   '<li style="display:flex;gap:6px;margin-bottom:4px"><span style="color:#002662;font-weight:700;min-width:16px;font-size:11px">$1.</span><span>$2</span></li>')
+    .replace(/^[*-] (.+)$/gm,      '<li style="display:flex;gap:6px;margin-bottom:4px"><span style="color:#002662;font-weight:700">•</span><span>$1</span></li>')
+    .replace(/^---$/gm, '<hr style="border:none;border-top:1px solid #c4c6d3;margin:8px 0"/>')
+    .replace(/(<li[^>]*>.*<\/li>\n?)+/g, m => `<ul style="list-style:none;padding:0;margin:6px 0">${m}</ul>`)
+    .replace(/\n{2,}/g, '</p><p style="margin:0 0 8px">')
+    .replace(/`([^`]+)`/g, '<code style="background:#e6eeff;color:#002662;padding:1px 4px;border-radius:3px;font-size:11px">$1</code>')
+    .replace(/^/, '<p style="margin:0 0 8px">')
+    .replace(/$/, '</p>')
+    .replace(/<p style="margin:0 0 8px"><\/p>/g, '')
+}
+
 const NIVEL_COLOR = { ROJO: '#ba1a1a', AMARILLO: '#FFB800', VERDE: '#00A344' }
 const NIVEL_LABEL = { ROJO: 'ALTO RIESGO', AMARILLO: 'MEDIO RIESGO', VERDE: 'BAJO RIESGO' }
 const NIVEL_CARD_STYLE = {
@@ -579,8 +598,13 @@ export default function Detalle({
               </div>
             )}
             {messages.map((m, i) => (
-              <div key={i} className={`chat-msg ${m.role === 'ai' ? 'chat-msg-ai' : 'chat-msg-user'}`}>
-                {m.text}
+              <div key={i} className={`chat-msg ${m.role === 'ai' ? 'chat-msg-ai' : 'chat-msg-user'}`}
+                style={{ fontSize: 13, lineHeight: 1.6 }}>
+                {m.role === 'ai' ? (
+                  <div dangerouslySetInnerHTML={{ __html: renderMarkdown(m.text) }} />
+                ) : (
+                  m.text
+                )}
               </div>
             ))}
             {chatLoading && (
