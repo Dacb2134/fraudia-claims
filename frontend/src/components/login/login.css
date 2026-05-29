@@ -118,7 +118,7 @@ body {
   letter-spacing: 0.05em;
 }
 
-/* Card — fondo sólido oscuro para que sea siempre visible */
+/* Card */
 .login-card {
   background: #0f1e3d;
   border: 1px solid rgba(255,255,255,0.09);
@@ -151,6 +151,7 @@ body {
   color: rgba(148,186,255,0.45);
   font-size: 18px;
   pointer-events: none;
+  z-index: 2; /* Asegura que el icono quede sobre el fondo del autofill */
 }
 
 .login-input {
@@ -164,6 +165,8 @@ body {
   outline: none;
   transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
   font-family: inherit;
+  position: relative;
+  z-index: 1;
 }
 
 .login-input::placeholder { color: rgba(148,186,255,0.25); }
@@ -179,6 +182,18 @@ body {
   box-shadow: 0 0 0 3px rgba(186,26,26,0.12);
 }
 
+/* ----- SOLUCIÓN AL FONDO BLANCO DE AUTOCOMPLETADO ----- */
+.login-input:-webkit-autofill,
+.login-input:-webkit-autofill:hover, 
+.login-input:-webkit-autofill:focus, 
+.login-input:-webkit-autofill:active{
+    -webkit-box-shadow: 0 0 0 30px #0f1e3d inset !important;
+    -webkit-text-fill-color: #fff !important;
+    transition: background-color 5000s ease-in-out 0s;
+    caret-color: #fff;
+}
+/* ------------------------------------------------------ */
+
 .login-input.has-toggle { padding-right: 44px; }
 
 .login-input-toggle {
@@ -191,6 +206,7 @@ body {
   background: none; border: none; padding: 0;
   transition: color 0.2s;
   display: flex; align-items: center;
+  z-index: 2;
 }
 
 .login-input-toggle:hover { color: rgba(148,186,255,0.8); }

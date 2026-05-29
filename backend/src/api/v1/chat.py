@@ -14,7 +14,7 @@ from src.core.database import get_db
 router = APIRouter()
 
 # ── Cambiar el modelo aquí cuando quieras ─────────────────────────────────────
-GEMINI_MODEL = "gemini-1.5-flash"   # ← esta es la línea para cambiar el modelo
+GEMINI_MODEL = "gemini-2.5-flash"   # ← esta es la línea para cambiar el modelo
 # ─────────────────────────────────────────────────────────────────────────────
 
 class ChatRequest(BaseModel):

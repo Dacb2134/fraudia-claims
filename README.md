@@ -277,4 +277,4 @@ fraudia-claims/
 
 Reto: **Aseguradora del Sur** · Detector de Posibles Fraudes en Siniestros usando IA
 
-> Este sistema genera alertas de revisión, no acusaciones de fraude. © 2026 FraudIA Claims.
+> Este sistema genera alertas de revisión, no acusaciones de fraude. © 2026 VEXTA AI.
