@@ -44,6 +44,20 @@ export default function GestionCasos({ onNav, onLogout, onVerDetalle }: NavProps
   const [marcados,    setMarcados]    = useState<Record<string, 'revision'|'limpio'>>({})
   const [toast,       setToast]       = useState<string | null>(null)
   const [showNotif,   setShowNotif]   = useState(false)
+  const [showSimular, setShowSimular] = useState(false)
+  const [simForm,     setSimForm]     = useState({
+    ramo: 'Vehículos', cobertura: 'Daño', estado: 'Reserva',
+    monto_reclamado: 5000, dias_desde_inicio_poliza: 30,
+    historial_siniestros_asegurado: 0, documentos_completos: true,
+    tiene_doc_inconsistente: 0, dias_entre_ocurrencia_reporte: 2,
+    proveedor_en_lista_restrictiva: false,
+  })
+  const [simResult,   setSimResult]   = useState<{score:number;nivel:string;alertas:string[]} | null>(null)
+  const [simLoading,  setSimLoading]  = useState(false)
+  const [showIngestar, setShowIngestar] = useState(false)
+  const [ingestFile,   setIngestFile]  = useState<File | null>(null)
+  const [ingestResult, setIngestResult] = useState<string | null>(null)
+  const [ingestLoading, setIngestLoading] = useState(false)
 
   const usuario  = obtenerSesion()
   const rolLabel = usuario?.rol === 'admin'      ? 'Administrador'
@@ -90,6 +104,33 @@ export default function GestionCasos({ onNav, onLogout, onVerDetalle }: NavProps
     setMarcados(prev => ({ ...prev, [id]: 'limpio' }))
     mostrarToast(`Caso ${id} marcado como sin anomalías`)
   }
+
+  async function handleSimular() {
+    setSimLoading(true); setSimResult(null)
+    try {
+      const res = await apiFetch<{score:number;nivel:string;alertas:string[]}>('/api/v1/siniestros/evaluar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(simForm),
+      })
+      setSimResult(res)
+    } catch (e: unknown) { mostrarToast(e instanceof Error ? e.message : 'Error') }
+    finally { setSimLoading(false) }
+  }
+
+  async function handleIngestar() {
+    if (!ingestFile) return
+    setIngestLoading(true); setIngestResult(null)
+    const fd = new FormData(); fd.append('archivo', ingestFile)
+    try {
+      const res = await apiFetch<{mensaje:string}>('/api/v1/siniestros/ingestar', { method: 'POST', body: fd })
+      setIngestResult(res.mensaje)
+      mostrarToast('CSV ingresado correctamente')
+    } catch (e: unknown) { setIngestResult(e instanceof Error ? e.message : 'Error') }
+    finally { setIngestLoading(false) }
+  }
+
+  const nivelColor = { ROJO: '#ba1a1a', AMARILLO: '#f97316', VERDE: '#00A344' } as const
 
   return (
     <div className="bg-background text-on-surface flex min-h-screen overflow-hidden">
@@ -195,6 +236,18 @@ export default function GestionCasos({ onNav, onLogout, onVerDetalle }: NavProps
               <p className="font-body-lg text-on-surface-variant">Monitoreo y validación de reclamos sospechosos en tiempo real.</p>
             </div>
             <div className="flex items-center gap-3">
+              <button
+                onClick={() => { setShowSimular(true); setSimResult(null) }}
+                className="flex items-center gap-2 px-4 py-2.5 bg-white border border-primary text-primary font-body-md rounded-xl hover:bg-primary hover:text-white transition-all cursor-pointer">
+                <span className="material-symbols-outlined text-[20px]">play_circle</span>
+                Simular Caso
+              </button>
+              <button
+                onClick={() => { setShowIngestar(true); setIngestResult(null) }}
+                className="flex items-center gap-2 px-4 py-2.5 bg-white border border-outline text-on-surface font-body-md rounded-xl hover:bg-surface-container-high transition-all cursor-pointer">
+                <span className="material-symbols-outlined text-[20px]">upload_file</span>
+                Cargar CSV
+              </button>
               <a
                 href={`${API_URL}/api/v1/reporte/exportar?nivel=todos`}
                 target="_blank" rel="noreferrer"
@@ -451,6 +504,145 @@ export default function GestionCasos({ onNav, onLogout, onVerDetalle }: NavProps
         <span className="material-symbols-outlined text-[32px] group-hover:scale-110 transition-transform">smart_toy</span>
         <div className="absolute -top-1 -right-1 w-4 h-4 bg-error rounded-full animate-pulse border-2 border-white"/>
       </button>
+
+      {/* ── Modal: Simular Caso ── */}
+      {showSimular && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', zIndex:400, display:'flex', alignItems:'center', justifyContent:'center', padding:'1rem' }}>
+          <div style={{ background:'#fff', borderRadius:16, padding:'2rem', width:'100%', maxWidth:560, maxHeight:'90vh', overflowY:'auto', boxShadow:'0 20px 60px rgba(0,0,0,0.3)' }}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
+              <div>
+                <h3 style={{ margin:0, color:'#002662', fontSize:18, fontWeight:700 }}>Simular Caso Nuevo</h3>
+                <p style={{ margin:'4px 0 0', fontSize:12, color:'#747783' }}>Ingresa los datos del siniestro y obtén el score de riesgo al instante</p>
+              </div>
+              <button onClick={() => setShowSimular(false)} style={{ background:'none', border:'none', cursor:'pointer', fontSize:24, color:'#747783', lineHeight:1 }}>×</button>
+            </div>
+
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginBottom:16 }}>
+              {[
+                { label:'Ramo', key:'ramo', type:'select', opts:['Vehículos','Hogar','Salud','Vida','Generales'] },
+                { label:'Cobertura', key:'cobertura', type:'text' },
+                { label:'Estado', key:'estado', type:'select', opts:['Reserva','Investigación','Cerrado Pagado','Pérdida Total por Robo'] },
+                { label:'Monto Reclamado ($)', key:'monto_reclamado', type:'number' },
+                { label:'Días desde inicio póliza', key:'dias_desde_inicio_poliza', type:'number' },
+                { label:'Historial siniestros previos', key:'historial_siniestros_asegurado', type:'number' },
+                { label:'Días entre ocurrencia y reporte', key:'dias_entre_ocurrencia_reporte', type:'number' },
+              ].map(f => (
+                <div key={f.key} style={{ display:'flex', flexDirection:'column', gap:4 }}>
+                  <label style={{ fontSize:11, color:'#747783', fontWeight:600 }}>{f.label}</label>
+                  {f.type === 'select' ? (
+                    <select value={(simForm as any)[f.key]} onChange={e => setSimForm(p => ({...p,[f.key]:e.target.value}))}
+                      style={{ border:'1px solid #c4c6d3', borderRadius:8, padding:'8px 10px', fontSize:13 }}>
+                      {f.opts!.map(o => <option key={o}>{o}</option>)}
+                    </select>
+                  ) : (
+                    <input type={f.type} value={(simForm as any)[f.key]} onChange={e => setSimForm(p => ({...p,[f.key]:f.type==='number'?Number(e.target.value):e.target.value}))}
+                      style={{ border:'1px solid #c4c6d3', borderRadius:8, padding:'8px 10px', fontSize:13 }} />
+                  )}
+                </div>
+              ))}
+              <div style={{ display:'flex', flexDirection:'column', gap:4 }}>
+                <label style={{ fontSize:11, color:'#747783', fontWeight:600 }}>Documentos completos</label>
+                <select value={simForm.documentos_completos ? 'si' : 'no'} onChange={e => setSimForm(p => ({...p, documentos_completos: e.target.value==='si'}))}
+                  style={{ border:'1px solid #c4c6d3', borderRadius:8, padding:'8px 10px', fontSize:13 }}>
+                  <option value="si">Sí</option><option value="no">No</option>
+                </select>
+              </div>
+              <div style={{ display:'flex', flexDirection:'column', gap:4 }}>
+                <label style={{ fontSize:11, color:'#747783', fontWeight:600 }}>Docs inconsistentes</label>
+                <select value={simForm.tiene_doc_inconsistente} onChange={e => setSimForm(p => ({...p, tiene_doc_inconsistente: Number(e.target.value)}))}
+                  style={{ border:'1px solid #c4c6d3', borderRadius:8, padding:'8px 10px', fontSize:13 }}>
+                  <option value={0}>No</option><option value={1}>Sí</option>
+                </select>
+              </div>
+              <div style={{ display:'flex', flexDirection:'column', gap:4 }}>
+                <label style={{ fontSize:11, color:'#747783', fontWeight:600 }}>Proveedor en lista restrictiva</label>
+                <select value={simForm.proveedor_en_lista_restrictiva ? 'si' : 'no'} onChange={e => setSimForm(p => ({...p, proveedor_en_lista_restrictiva: e.target.value==='si'}))}
+                  style={{ border:'1px solid #c4c6d3', borderRadius:8, padding:'8px 10px', fontSize:13 }}>
+                  <option value="no">No</option><option value="si">Sí</option>
+                </select>
+              </div>
+            </div>
+
+            <button onClick={handleSimular} disabled={simLoading}
+              style={{ width:'100%', padding:'12px', background:'#002662', color:'#fff', border:'none', borderRadius:10, cursor:'pointer', fontSize:14, fontWeight:700, marginBottom:16,
+                opacity: simLoading ? 0.6 : 1 }}>
+              {simLoading ? 'Calculando…' : '⚡ Calcular Score de Riesgo'}
+            </button>
+
+            {simResult && (
+              <div style={{ border:`2px solid ${nivelColor[simResult.nivel as keyof typeof nivelColor] ?? '#002662'}`, borderRadius:12, padding:'1rem' }}>
+                <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:12 }}>
+                  <span style={{ fontSize:48, fontWeight:900, color: nivelColor[simResult.nivel as keyof typeof nivelColor] ?? '#002662', lineHeight:1 }}>
+                    {simResult.score}
+                  </span>
+                  <div>
+                    <span style={{ display:'block', fontSize:11, color:'#747783' }}>SCORE DE RIESGO</span>
+                    <span style={{ fontSize:16, fontWeight:700, color: nivelColor[simResult.nivel as keyof typeof nivelColor] ?? '#002662' }}>
+                      {simResult.nivel === 'ROJO' ? '🔴' : simResult.nivel === 'AMARILLO' ? '🟡' : '🟢'} {simResult.nivel}
+                    </span>
+                  </div>
+                </div>
+                {simResult.alertas.length > 0 && (
+                  <div>
+                    <p style={{ fontSize:11, color:'#747783', margin:'0 0 6px', fontWeight:600 }}>SEÑALES DETECTADAS:</p>
+                    {simResult.alertas.map((a, i) => (
+                      <div key={i} style={{ fontSize:12, color:'#434652', padding:'4px 0', borderBottom:'1px solid #f0f2fa' }}>
+                        • {a}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {simResult.alertas.length === 0 && (
+                  <p style={{ fontSize:12, color:'#00A344' }}>✓ No se detectaron señales de riesgo.</p>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal: Cargar CSV ── */}
+      {showIngestar && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', zIndex:400, display:'flex', alignItems:'center', justifyContent:'center', padding:'1rem' }}>
+          <div style={{ background:'#fff', borderRadius:16, padding:'2rem', width:'100%', maxWidth:480, boxShadow:'0 20px 60px rgba(0,0,0,0.3)' }}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
+              <div>
+                <h3 style={{ margin:0, color:'#002662', fontSize:18, fontWeight:700 }}>Cargar CSV de Siniestros</h3>
+                <p style={{ margin:'4px 0 0', fontSize:12, color:'#747783' }}>El sistema validará, procesará y calculará el score de cada caso</p>
+              </div>
+              <button onClick={() => setShowIngestar(false)} style={{ background:'none', border:'none', cursor:'pointer', fontSize:24, color:'#747783', lineHeight:1 }}>×</button>
+            </div>
+
+            <div style={{ background:'#eff4ff', borderRadius:8, padding:'10px 14px', marginBottom:16, fontSize:12, color:'#002662' }}>
+              <strong>Columnas mínimas del CSV:</strong><br/>
+              <code style={{ fontFamily:'JetBrains Mono', fontSize:11 }}>
+                ramo, cobertura, monto_reclamado, dias_desde_inicio_poliza,<br/>
+                historial_siniestros_asegurado, documentos_completos
+              </code>
+            </div>
+
+            <label style={{ display:'block', border:'2px dashed #c4c6d3', borderRadius:12, padding:'2rem', textAlign:'center', cursor:'pointer', marginBottom:16 }}>
+              <span className="material-symbols-outlined" style={{ fontSize:36, color:'#747783', display:'block', marginBottom:8 }}>upload_file</span>
+              <span style={{ fontSize:14, color:'#434652' }}>
+                {ingestFile ? ingestFile.name : 'Haz clic o arrastra el CSV aquí'}
+              </span>
+              <input type="file" accept=".csv" style={{ display:'none' }} onChange={e => setIngestFile(e.target.files?.[0] ?? null)} />
+            </label>
+
+            <button onClick={handleIngestar} disabled={!ingestFile || ingestLoading}
+              style={{ width:'100%', padding:'12px', background:'#002662', color:'#fff', border:'none', borderRadius:10, cursor:'pointer', fontSize:14, fontWeight:700, marginBottom:12,
+                opacity: (!ingestFile || ingestLoading) ? 0.5 : 1 }}>
+              {ingestLoading ? 'Procesando…' : '📥 Procesar e Ingestar'}
+            </button>
+
+            {ingestResult && (
+              <div style={{ background:'#d6f5e3', borderRadius:8, padding:'10px 14px', fontSize:13, color:'#005c28' }}>
+                {ingestResult}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <style>{`
         .risk-gradient-high { background: linear-gradient(90deg, rgba(186,26,26,0.1) 0%, rgba(255,255,255,0) 100%); }

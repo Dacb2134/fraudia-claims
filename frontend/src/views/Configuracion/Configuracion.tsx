@@ -61,15 +61,19 @@ export default function Configuracion({ onNav, onLogout }: NavProps) {
   ]
 
   const SEÑALES_FRAUDE = [
-    { codigo: 'S-01', señal: 'Reclamo borde de vigencia',   max: '8 pts'  },
-    { codigo: 'S-02', señal: 'Demora denuncia robo',         max: '8 pts'  },
-    { codigo: 'S-03', señal: 'Alta frecuencia asegurado',    max: '8 pts'  },
-    { codigo: 'S-06', señal: 'Proveedor recurrente',         max: '10 pts' },
-    { codigo: 'S-07', señal: 'Documentos incompletos',       max: '4 pts'  },
-    { codigo: 'S-10', señal: 'Documentos inconsistentes',    max: '10 pts' },
-    { codigo: 'S-11', señal: 'Reporte tardío',               max: '5 pts'  },
-    { codigo: 'S-12', señal: 'Narrativas similares',         max: '8 pts'  },
-    { codigo: 'S-13', señal: 'Monto cercano suma asegurada', max: '4 pts'  },
+    { codigo: 'S-01', señal: 'Siniestro borde de vigencia (≤30 días)',    max: '8 pts'  },
+    { codigo: 'S-02', señal: 'Demora denuncia por robo (>48h)',            max: '8 pts'  },
+    { codigo: 'S-03', señal: 'Alta frecuencia reclamos asegurado (≥3)',    max: '8 pts'  },
+    { codigo: 'S-04', señal: 'Alta frecuencia reclamos solo RC',           max: '6 pts'  },
+    { codigo: 'S-07', señal: 'Proveedor/beneficiario en lista restrictiva', max: '10 pts' },
+    { codigo: 'S-08', señal: 'Documentos obligatorios incompletos',        max: '4 pts'  },
+    { codigo: 'S-09', señal: 'Dinámica del accidente sospechosa',          max: '6 pts'  },
+    { codigo: 'S-10', señal: 'Daño severo sin tercero identificado',       max: '5 pts'  },
+    { codigo: 'S-11', señal: 'Documentos inconsistentes/adulterados',      max: '10 pts' },
+    { codigo: 'S-12', señal: 'Reporte tardío (>7 días)',                   max: '5 pts'  },
+    { codigo: 'S-13', señal: 'Narrativa clonada (similitud ≥85%)',         max: '8 pts'  },
+    { codigo: 'S-14', señal: 'Monto ≥95% de la suma asegurada',           max: '5 pts'  },
+    { codigo: 'RF-01', señal: 'Pérdida Total por Robo (regla crítica)',    max: '+20 pts' },
   ]
 
   return (

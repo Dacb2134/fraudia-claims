@@ -2,7 +2,19 @@ import { useRef, useEffect, useState } from 'react'
 import './Detalle.css'
 import { useSiniestroDetalle } from '../../controllers/useSiniestroDetalle'
 import { obtenerSesion } from '../../services/authService'
+import { apiFetch, API_URL } from '../../services/api'
 import Sidebar from '../../components/shared/Sidebar'
+
+type DocExpediente = {
+  id: string
+  tipo: string
+  label: string
+  nombre: string
+  origen: 'dataset' | 'upload'
+  icono: string
+  db_id?: number
+  tiene_analisis?: boolean
+}
 
 function renderMarkdown(text: string): string {
   return text
@@ -68,9 +80,60 @@ export default function Detalle({
   const [auditoria,       setAuditoria]       = useState(false)
   const [auditConfirmada, setAuditConfirmada] = useState(false)
 
+  // Documentos del expediente
+  const [docsExpediente, setDocsExpediente] = useState<DocExpediente[]>([])
+  const [docAnalisis,    setDocAnalisis]    = useState<Record<string, string>>({})
+  const [docLoading,     setDocLoading]     = useState<Record<string, boolean>>({})
+  const [docUploadTipo,  setDocUploadTipo]  = useState('factura')
+  const [docSubiendo,    setDocSubiendo]    = useState(false)
+  const [docUploadMsg,   setDocUploadMsg]   = useState<string | null>(null)
+  const fileDocRef = useRef<HTMLInputElement>(null)
+
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
+
+  useEffect(() => {
+    if (!siniestroId) return
+    apiFetch<{ documentos: DocExpediente[] }>(`/api/v1/siniestros/${siniestroId}/documentos`)
+      .then(r => setDocsExpediente(r.documentos))
+      .catch(() => {})
+  }, [siniestroId])
+
+  async function handleAnalizarDoc(docId: string) {
+    setDocLoading(p => ({ ...p, [docId]: true }))
+    try {
+      const res = await apiFetch<{ analisis: string }>(`/api/v1/siniestros/${siniestroId}/documentos/analizar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ doc_id: docId }),
+      })
+      setDocAnalisis(p => ({ ...p, [docId]: res.analisis }))
+    } catch (e: unknown) {
+      setDocAnalisis(p => ({ ...p, [docId]: `Error: ${e instanceof Error ? e.message : 'No se pudo analizar'}` }))
+    } finally {
+      setDocLoading(p => ({ ...p, [docId]: false }))
+    }
+  }
+
+  async function handleSubirDoc(file: File) {
+    setDocSubiendo(true); setDocUploadMsg(null)
+    const fd = new FormData()
+    fd.append('tipo_documento', docUploadTipo)
+    fd.append('archivo', file)
+    try {
+      const res = await apiFetch<{ mensaje: string }>(`/api/v1/siniestros/${siniestroId}/documentos/subir`, { method: 'POST', body: fd })
+      setDocUploadMsg(res.mensaje)
+      // Refrescar lista
+      const lista = await apiFetch<{ documentos: DocExpediente[] }>(`/api/v1/siniestros/${siniestroId}/documentos`)
+      setDocsExpediente(lista.documentos)
+    } catch (e: unknown) {
+      setDocUploadMsg(`Error: ${e instanceof Error ? e.message : 'Error al subir'}`)
+    } finally {
+      setDocSubiendo(false)
+      if (fileDocRef.current) fileDocRef.current.value = ''
+    }
+  }
 
   if (loading) {
     return (
@@ -523,6 +586,87 @@ export default function Detalle({
               )}
             </div>
           </div>
+
+          {/* ── Documentos del Expediente ── */}
+          <div className="section-card" style={{ marginTop: '1.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h2 style={{ margin: 0 }}>
+                <span className="material-symbols-outlined" style={{ color: '#002662' }}>folder_open</span>
+                Documentos del Expediente
+              </h2>
+              <span style={{ fontSize: 11, color: '#747783', fontFamily: 'JetBrains Mono' }}>
+                {docsExpediente.length} documento{docsExpediente.length !== 1 ? 's' : ''} disponible{docsExpediente.length !== 1 ? 's' : ''}
+              </span>
+            </div>
+
+            {/* Lista de documentos existentes */}
+            {docsExpediente.length === 0 ? (
+              <p style={{ fontSize: 13, color: '#747783', fontStyle: 'italic' }}>
+                No hay documentos registrados para este siniestro.
+              </p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 16 }}>
+                {docsExpediente.map(doc => (
+                  <div key={doc.id} style={{ border: '1px solid #e0e2f0', borderRadius: 10, padding: '0.75rem 1rem', background: '#fafbff' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span className="material-symbols-outlined" style={{ color: '#002662', fontSize: 20 }}>{doc.icono}</span>
+                        <div>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: '#002662' }}>{doc.label}</span>
+                          <span style={{ fontSize: 11, color: '#747783', marginLeft: 8, fontFamily: 'JetBrains Mono' }}>{doc.nombre}</span>
+                          {doc.origen === 'dataset' && (
+                            <span style={{ fontSize: 10, background: '#e6eeff', color: '#002662', padding: '1px 6px', borderRadius: 4, marginLeft: 6, fontWeight: 600 }}>DATASET</span>
+                          )}
+                          {doc.origen === 'upload' && (
+                            <span style={{ fontSize: 10, background: '#d6f5e3', color: '#005c28', padding: '1px 6px', borderRadius: 4, marginLeft: 6, fontWeight: 600 }}>SUBIDO</span>
+                          )}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleAnalizarDoc(doc.id)}
+                        disabled={!!docLoading[doc.id]}
+                        style={{ padding: '6px 14px', background: '#002662', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5, opacity: docLoading[doc.id] ? 0.6 : 1 }}>
+                        <span className="material-symbols-outlined" style={{ fontSize: 15, animation: docLoading[doc.id] ? 'spin 1s linear infinite' : 'none' }}>
+                          {docLoading[doc.id] ? 'sync' : 'auto_awesome'}
+                        </span>
+                        {docLoading[doc.id] ? 'Analizando…' : 'Analizar con IA'}
+                      </button>
+                    </div>
+                    {docAnalisis[doc.id] && (
+                      <div style={{ marginTop: 10, padding: '10px 14px', background: '#eff4ff', borderRadius: 8, borderLeft: '3px solid #002662', fontSize: 13, color: '#121c2a', lineHeight: 1.6 }}
+                        dangerouslySetInnerHTML={{ __html: renderMarkdown(docAnalisis[doc.id]) }} />
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Subir nuevo documento */}
+            <div style={{ borderTop: '1px solid #e0e2f0', paddingTop: '1rem' }}>
+              <p style={{ fontSize: 12, fontWeight: 700, color: '#434652', margin: '0 0 8px' }}>Registrar nuevo documento</p>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                <select value={docUploadTipo} onChange={e => setDocUploadTipo(e.target.value)}
+                  style={{ border: '1px solid #c4c6d3', borderRadius: 8, padding: '7px 10px', fontSize: 13, color: '#121c2a', background: '#fff' }}>
+                  <option value="factura">Factura</option>
+                  <option value="declaracion_accidente">Declaración de Accidente</option>
+                  <option value="parte_policial">Parte Policial</option>
+                </select>
+                <label style={{ padding: '7px 14px', background: '#e6eeff', color: '#002662', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>upload_file</span>
+                  Seleccionar PDF
+                  <input ref={fileDocRef} type="file" accept=".pdf" style={{ display: 'none' }}
+                    onChange={e => { const f = e.target.files?.[0]; if (f) handleSubirDoc(f) }} />
+                </label>
+                {docSubiendo && <span style={{ fontSize: 12, color: '#747783' }}>Subiendo…</span>}
+                {docUploadMsg && (
+                  <span style={{ fontSize: 12, color: docUploadMsg.startsWith('Error') ? '#ba1a1a' : '#00A344', fontFamily: 'JetBrains Mono' }}>
+                    {docUploadMsg}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
         </main>
       </div>
 

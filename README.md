@@ -262,6 +262,25 @@ fraudia-claims/
 
 ---
 
+## Arquitectura Futura (Escalabilidad)
+
+Para una implementación en producción real, se propone la siguiente evolución de la arquitectura:
+
+| Componente actual | Evolución a producción |
+|---|---|
+| Modelo `.pkl` en disco | Registro de modelos en **MLflow / S3** con versionado |
+| Scoring síncrono en la API | Cola asíncrona con **Celery + Redis** para alta concurrencia |
+| Autenticación por password | **JWT con expiración** + SSO corporativo |
+| MySQL single instance | **MySQL con réplica** de lectura + caché Redis |
+| Sin auditoría persistente | **Tabla de auditoría** para trazabilidad legal de cada decisión |
+| Reentrenamiento manual | **Pipeline CI/CD** con reentrenamiento automático mensual |
+| Gemini API directa | **Gateway de IA** con fallback a modelos alternativos |
+| Deploy en Railway | **Kubernetes** con auto-scaling horizontal |
+
+El diseño actual — con motor de reglas separado del API, ML como capa independiente, y agente IA desacoplado — facilita esta evolución sin reescribir la lógica de negocio.
+
+---
+
 ## Principios éticos
 
 - 🚫 El sistema **nunca acusa** de fraude — genera alertas de revisión
