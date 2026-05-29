@@ -19,3 +19,28 @@ body {
   display: flex;
   flex-direction: column;
 }
+
+/* ── Mobile top bar (App.tsx) ────────────────────────────────── */
+.mobile-topbar {
+  display: none !important;
+}
+
+@media (max-width: 768px) {
+  /* Mostrar la top bar de App.tsx en mobile */
+  .mobile-topbar {
+    display: flex !important;
+  }
+
+  /* Empujar el contenido de todas las vistas autenticadas
+     para que no quede debajo de la top bar (56px) */
+  .dashboard-layout,
+  .agente-layout,
+  .gc-layout {
+    padding-top: 56px;
+  }
+
+  /* Vistas que usan flex directo sin clase wrapper */
+  .main-content {
+    padding-top: 0; /* dashboard ya tiene wrapper */
+  }
+}

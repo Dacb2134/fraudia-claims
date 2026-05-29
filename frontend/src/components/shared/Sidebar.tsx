@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { obtenerSesion } from '../../services/authService'
 
 type Vista = 'dashboard' | 'casos' | 'agente' | 'reportes' | 'configuracion'
@@ -33,6 +33,13 @@ export default function Sidebar({ vistaActiva, onNav, onLogout }: SidebarProps) 
   const usuario = obtenerSesion()
   const rol     = usuario?.rol ?? 'analista'
   const [mobileOpen, setMobileOpen] = useState(false)
+
+  // Escucha el evento del mobile top bar de App.tsx
+  useEffect(() => {
+    function toggle() { setMobileOpen(v => !v) }
+    window.addEventListener('fraudia:toggle-sidebar', toggle)
+    return () => window.removeEventListener('fraudia:toggle-sidebar', toggle)
+  }, [])
 
   function navAndClose(v: string) { onNav(v); setMobileOpen(false) }
 
@@ -143,20 +150,6 @@ export default function Sidebar({ vistaActiva, onNav, onLogout }: SidebarProps) 
 
   return (
     <>
-      {/* Hamburger button — mobile only */}
-      <button
-        className="md:hidden"
-        onClick={() => setMobileOpen(true)}
-        style={{
-          position: 'fixed', top: 14, left: 14, zIndex: 200,
-          background: '#002662', color: '#fff', border: 'none',
-          borderRadius: 10, width: 40, height: 40,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          cursor: 'pointer', boxShadow: '0 2px 12px rgba(0,0,0,0.2)',
-        }}>
-        <span className="material-symbols-outlined" style={{ fontSize: 22 }}>menu</span>
-      </button>
-
       {/* Mobile backdrop */}
       {mobileOpen && (
         <div
