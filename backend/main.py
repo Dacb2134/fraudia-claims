@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from src.api.v1 import siniestros, chat, stats, ml_endpoints, nlp_endpoints, extra_endpoints, auth
@@ -8,10 +9,13 @@ app = FastAPI(
     version="1.0.0",
 )
 
+_raw = os.getenv("ALLOWED_ORIGINS", "*")
+allowed_origins = [o.strip() for o in _raw.split(",")] if _raw != "*" else ["*"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=allowed_origins,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
